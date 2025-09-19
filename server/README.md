@@ -7,13 +7,8 @@ This folder contains the backend server for the Wanda Voice AI Assistant. It pro
 - `main.py` — Main FastAPI application with API endpoints
 - `wanda_openai.py` — OpenAI Azure integration for AI chat capabilities
 - `requirements.txt` — Python dependencies list
-- `config/` — Database and API connection configuration modules
-  - `mongodbConnection.py` — MongoDB connection setup
-  - `mysqlconnection.py` — MySQL connection setup
-  - `openaiconnection.py` — OpenAI API configuration
 - `models/` — Database models and schemas
   - `Wanda_DB_Mongo.py` — MongoDB models and operations
-  - `Wanda_DB.py` — General database operations
 - `wandaenv/` — Python virtual environment (ignored by Git)
 
 ## Features
