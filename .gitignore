@@ -1,0 +1,164 @@
+# Environment files
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+server/.env
+server/.env.local
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+pip-wheel-metadata/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual environments
+venv/
+ENV/
+env/
+.venv/
+wandaenv/
+*/venv/
+*/ENV/
+*/env/
+*/.venv/
+*/wandaenv/
+
+# Virtual environment lib directories
+venv/lib/
+ENV/lib/
+env/lib/
+.venv/lib/
+wandaenv/lib/
+*/venv/lib/
+*/ENV/lib/
+*/env/lib/
+*/.venv/lib/
+*/wandaenv/lib/
+
+# Virtual environment include directories
+venv/include/
+ENV/include/
+env/include/
+.venv/include/
+wandaenv/include/
+*/venv/include/
+*/ENV/include/
+*/env/include/
+*/.venv/include/
+*/wandaenv/include/
+
+# Virtual environment bin directories
+venv/bin/
+ENV/bin/
+env/bin/
+.venv/bin/
+wandaenv/bin/
+*/venv/bin/
+*/ENV/bin/
+*/env/bin/
+*/.venv/bin/
+*/wandaenv/bin/
+
+# PyInstaller
+*.manifest
+*.spec
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+.pytest_cache/
+
+# Xcode
+*.xcuserstate
+*.xcuserdatad/
+xcuserdata/
+*.mode1v3
+*.mode2v3
+*.perspectivev3
+*.pbxuser
+!default.pbxuser
+*.xcworkspace
+!default.xcworkspace
+.DS_Store
+*.swp
+*.lock
+profile
+*.tmp
+build/
+.build
+Packages
+.swiftpm
+DerivedData/
+.derived_data/
+
+# iOS
+*.ipa
+*.dSYM.zip
+*.dSYM
+
+# Swift Package Manager
+Packages/
+Package.pins
+Package.resolved
+.build/
+
+# General
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+
+# Log files
+*.log
+logs/
+
+# Temporary files
+*.tmp
+*.temp
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# API Keys and secrets
+config.json
+secrets.json
+*.pem
+*.key
+!*.pub.key
