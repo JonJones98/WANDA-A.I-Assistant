@@ -165,3 +165,6 @@ secrets.json
 
 # Kokoro text-to-speech model files (downloaded, ~340 MB)
 server/tts_models/
+
+# Xcode code-coverage output from test runs
+*.profraw

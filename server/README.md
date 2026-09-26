@@ -1,5 +1,7 @@
 # Wanda Server
 
+> For the whole project — installing on a Mac, the desktop app and how to use it — see the [main README](../README.md).
+
 This folder contains the backend server for the Wanda Voice AI Assistant. It provides API endpoints for voice-driven interactions and application management on macOS.
 
 ## Structure
@@ -26,7 +28,7 @@ This folder contains the backend server for the Wanda Voice AI Assistant. It pro
 
 ## Prerequisites
 
-- Python 3.8 or higher
+- Python 3.10 or higher (Kokoro text-to-speech needs 3.10+)
 - macOS (for application control features)
 - MongoDB Atlas account (for database)
 - Azure OpenAI API key
@@ -53,7 +55,7 @@ This folder contains the backend server for the Wanda Voice AI Assistant. It pro
     Create a `.env` file in the server directory with the following variables:
     ```env
     OPENAI_API_KEY=your_azure_openai_api_key_here
-    MONGODB_CONNECTION_STRING=your_mongodb_connection_string
+    MongoDB_Connection_String=your_mongodb_connection_string
     ```
 
 5. **Download the Kokoro voice model** (about 340 MB, one time):
