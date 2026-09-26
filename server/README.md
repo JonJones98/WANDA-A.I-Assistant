@@ -119,7 +119,6 @@ To contribute to the server:
 - **MongoDB Connection Issues**: Check your connection string and network access
 - **OpenAI API Errors**: Verify your Azure OpenAI API key and endpoint
 - **macOS App Control**: Ensure proper permissions for system app control
-- **No Kokoro voices in the app**: Check that `tts_models/` has both files and that `GET /tts/voices` works at `/docs`
 
 ## License
 
