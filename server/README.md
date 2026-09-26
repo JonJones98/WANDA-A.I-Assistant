@@ -6,6 +6,8 @@ This folder contains the backend server for the Wanda Voice AI Assistant. It pro
 
 - `main.py` — Main FastAPI application with API endpoints
 - `wanda_openai.py` — OpenAI Azure integration for AI chat capabilities
+- `wanda_tts.py` — Local text-to-speech with Kokoro
+- `tts_models/` — Kokoro model files (downloaded, ignored by Git)
 - `requirements.txt` — Python dependencies list
 - `models/` — Database models and schemas
   - `Wanda_DB_Mongo.py` — MongoDB models and operations
@@ -20,6 +22,7 @@ This folder contains the backend server for the Wanda Voice AI Assistant. It pro
 - **Custom Commands**: Store and execute custom user commands
 - **FastAPI Framework**: Modern, fast, async API with automatic documentation
 - **Chat History**: Maintain conversation history with AI assistant
+- **Natural Voices**: Kokoro text-to-speech runs locally, free and offline
 
 ## Prerequisites
 
@@ -52,6 +55,14 @@ This folder contains the backend server for the Wanda Voice AI Assistant. It pro
     OPENAI_API_KEY=your_azure_openai_api_key_here
     MONGODB_CONNECTION_STRING=your_mongodb_connection_string
     ```
+
+5. **Download the Kokoro voice model** (about 340 MB, one time):
+    ```sh
+    mkdir -p tts_models
+    curl -L -o tts_models/kokoro-v1.0.onnx https://github.com/thewh1teagle/kokoro-onnx/releases/download/model-files-v1.0/kokoro-v1.0.onnx
+    curl -L -o tts_models/voices-v1.0.bin https://github.com/thewh1teagle/kokoro-onnx/releases/download/model-files-v1.0/voices-v1.0.bin
+    ```
+    Without these files the server still runs; the app falls back to Apple voices.
 
 ## Running the Server
 
@@ -108,6 +119,7 @@ To contribute to the server:
 - **MongoDB Connection Issues**: Check your connection string and network access
 - **OpenAI API Errors**: Verify your Azure OpenAI API key and endpoint
 - **macOS App Control**: Ensure proper permissions for system app control
+- **No Kokoro voices in the app**: Check that `tts_models/` has both files and that `GET /tts/voices` works at `/docs`
 
 ## License
 

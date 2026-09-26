@@ -1,0 +1,602 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		74ED69462EAB15F700C1D9FC /* CloudKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 74ED69442EAB15F300C1D9FC /* CloudKit.framework */; };
+		74ED69472EAB15F700C1D9FC /* CloudKit.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 74ED69442EAB15F300C1D9FC /* CloudKit.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		74ED69492EAB15F900C1D9FC /* HealthKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 74ED69422EAB15EB00C1D9FC /* HealthKit.framework */; };
+		74ED694A2EAB15F900C1D9FC /* HealthKit.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 74ED69422EAB15EB00C1D9FC /* HealthKit.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		74ED69252EAB01B100C1D9FC /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 74ED690C2EAB01A800C1D9FC /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 74ED69132EAB01A800C1D9FC;
+			remoteInfo = Wanda_IOS;
+		};
+		74ED692F2EAB01B100C1D9FC /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 74ED690C2EAB01A800C1D9FC /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 74ED69132EAB01A800C1D9FC;
+			remoteInfo = Wanda_IOS;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		74ED69482EAB15F700C1D9FC /* Embed Frameworks */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 10;
+			files = (
+				74ED69472EAB15F700C1D9FC /* CloudKit.framework in Embed Frameworks */,
+				74ED694A2EAB15F900C1D9FC /* HealthKit.framework in Embed Frameworks */,
+			);
+			name = "Embed Frameworks";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
+/* Begin PBXFileReference section */
+		74ED69142EAB01A800C1D9FC /* Wanda_IOS.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Wanda_IOS.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		74ED69242EAB01B100C1D9FC /* Wanda_IOSTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = Wanda_IOSTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		74ED692E2EAB01B100C1D9FC /* Wanda_IOSUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = Wanda_IOSUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		74ED69422EAB15EB00C1D9FC /* HealthKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = HealthKit.framework; path = System/Library/Frameworks/HealthKit.framework; sourceTree = SDKROOT; };
+		74ED69442EAB15F300C1D9FC /* CloudKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CloudKit.framework; path = System/Library/Frameworks/CloudKit.framework; sourceTree = SDKROOT; };
+/* End PBXFileReference section */
+
+/* Begin PBXFileSystemSynchronizedRootGroup section */
+		74ED69162EAB01A800C1D9FC /* Wanda_IOS */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = Wanda_IOS;
+			sourceTree = "<group>";
+		};
+		74ED69272EAB01B100C1D9FC /* Wanda_IOSTests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = Wanda_IOSTests;
+			sourceTree = "<group>";
+		};
+		74ED69312EAB01B100C1D9FC /* Wanda_IOSUITests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = Wanda_IOSUITests;
+			sourceTree = "<group>";
+		};
+/* End PBXFileSystemSynchronizedRootGroup section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		74ED69112EAB01A800C1D9FC /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				74ED69462EAB15F700C1D9FC /* CloudKit.framework in Frameworks */,
+				74ED69492EAB15F900C1D9FC /* HealthKit.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		74ED69212EAB01B100C1D9FC /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		74ED692B2EAB01B100C1D9FC /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		74ED690B2EAB01A800C1D9FC = {
+			isa = PBXGroup;
+			children = (
+				74ED69162EAB01A800C1D9FC /* Wanda_IOS */,
+				74ED69272EAB01B100C1D9FC /* Wanda_IOSTests */,
+				74ED69312EAB01B100C1D9FC /* Wanda_IOSUITests */,
+				74ED69412EAB15EB00C1D9FC /* Frameworks */,
+				74ED69152EAB01A800C1D9FC /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		74ED69152EAB01A800C1D9FC /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				74ED69142EAB01A800C1D9FC /* Wanda_IOS.app */,
+				74ED69242EAB01B100C1D9FC /* Wanda_IOSTests.xctest */,
+				74ED692E2EAB01B100C1D9FC /* Wanda_IOSUITests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		74ED69412EAB15EB00C1D9FC /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				74ED69442EAB15F300C1D9FC /* CloudKit.framework */,
+				74ED69422EAB15EB00C1D9FC /* HealthKit.framework */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		74ED69132EAB01A800C1D9FC /* Wanda_IOS */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 74ED69382EAB01B100C1D9FC /* Build configuration list for PBXNativeTarget "Wanda_IOS" */;
+			buildPhases = (
+				74ED69102EAB01A800C1D9FC /* Sources */,
+				74ED69112EAB01A800C1D9FC /* Frameworks */,
+				74ED69122EAB01A800C1D9FC /* Resources */,
+				74ED69482EAB15F700C1D9FC /* Embed Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				74ED69162EAB01A800C1D9FC /* Wanda_IOS */,
+			);
+			name = Wanda_IOS;
+			packageProductDependencies = (
+			);
+			productName = Wanda_IOS;
+			productReference = 74ED69142EAB01A800C1D9FC /* Wanda_IOS.app */;
+			productType = "com.apple.product-type.application";
+		};
+		74ED69232EAB01B100C1D9FC /* Wanda_IOSTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 74ED693B2EAB01B100C1D9FC /* Build configuration list for PBXNativeTarget "Wanda_IOSTests" */;
+			buildPhases = (
+				74ED69202EAB01B100C1D9FC /* Sources */,
+				74ED69212EAB01B100C1D9FC /* Frameworks */,
+				74ED69222EAB01B100C1D9FC /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				74ED69262EAB01B100C1D9FC /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				74ED69272EAB01B100C1D9FC /* Wanda_IOSTests */,
+			);
+			name = Wanda_IOSTests;
+			packageProductDependencies = (
+			);
+			productName = Wanda_IOSTests;
+			productReference = 74ED69242EAB01B100C1D9FC /* Wanda_IOSTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		74ED692D2EAB01B100C1D9FC /* Wanda_IOSUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 74ED693E2EAB01B100C1D9FC /* Build configuration list for PBXNativeTarget "Wanda_IOSUITests" */;
+			buildPhases = (
+				74ED692A2EAB01B100C1D9FC /* Sources */,
+				74ED692B2EAB01B100C1D9FC /* Frameworks */,
+				74ED692C2EAB01B100C1D9FC /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				74ED69302EAB01B100C1D9FC /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				74ED69312EAB01B100C1D9FC /* Wanda_IOSUITests */,
+			);
+			name = Wanda_IOSUITests;
+			packageProductDependencies = (
+			);
+			productName = Wanda_IOSUITests;
+			productReference = 74ED692E2EAB01B100C1D9FC /* Wanda_IOSUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		74ED690C2EAB01A800C1D9FC /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 1620;
+				LastUpgradeCheck = 1620;
+				TargetAttributes = {
+					74ED69132EAB01A800C1D9FC = {
+						CreatedOnToolsVersion = 16.2;
+					};
+					74ED69232EAB01B100C1D9FC = {
+						CreatedOnToolsVersion = 16.2;
+						TestTargetID = 74ED69132EAB01A800C1D9FC;
+					};
+					74ED692D2EAB01B100C1D9FC = {
+						CreatedOnToolsVersion = 16.2;
+						TestTargetID = 74ED69132EAB01A800C1D9FC;
+					};
+				};
+			};
+			buildConfigurationList = 74ED690F2EAB01A800C1D9FC /* Build configuration list for PBXProject "Wanda_IOS" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = 74ED690B2EAB01A800C1D9FC;
+			minimizedProjectReferenceProxies = 1;
+			preferredProjectObjectVersion = 77;
+			productRefGroup = 74ED69152EAB01A800C1D9FC /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				74ED69132EAB01A800C1D9FC /* Wanda_IOS */,
+				74ED69232EAB01B100C1D9FC /* Wanda_IOSTests */,
+				74ED692D2EAB01B100C1D9FC /* Wanda_IOSUITests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		74ED69122EAB01A800C1D9FC /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		74ED69222EAB01B100C1D9FC /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		74ED692C2EAB01B100C1D9FC /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		74ED69102EAB01A800C1D9FC /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		74ED69202EAB01B100C1D9FC /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		74ED692A2EAB01B100C1D9FC /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		74ED69262EAB01B100C1D9FC /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 74ED69132EAB01A800C1D9FC /* Wanda_IOS */;
+			targetProxy = 74ED69252EAB01B100C1D9FC /* PBXContainerItemProxy */;
+		};
+		74ED69302EAB01B100C1D9FC /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 74ED69132EAB01A800C1D9FC /* Wanda_IOS */;
+			targetProxy = 74ED692F2EAB01B100C1D9FC /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		74ED69362EAB01B100C1D9FC /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.6;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		74ED69372EAB01B100C1D9FC /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.6;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		74ED69392EAB01B100C1D9FC /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_ASSET_PATHS = "\"Wanda_IOS/Preview Content\"";
+				DEVELOPMENT_TEAM = TSKR4SQTM4;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				IPHONEOS_DEPLOYMENT_TARGET = 15.6;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "Jonathan-Jones.Wanda-IOS";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		74ED693A2EAB01B100C1D9FC /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_ASSET_PATHS = "\"Wanda_IOS/Preview Content\"";
+				DEVELOPMENT_TEAM = TSKR4SQTM4;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				IPHONEOS_DEPLOYMENT_TARGET = 15.6;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "Jonathan-Jones.Wanda-IOS";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		74ED693C2EAB01B100C1D9FC /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = TSKR4SQTM4;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.6;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "Jonathan-Jones.Wanda-IOSTests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Wanda_IOS.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Wanda_IOS";
+			};
+			name = Debug;
+		};
+		74ED693D2EAB01B100C1D9FC /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = TSKR4SQTM4;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.6;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "Jonathan-Jones.Wanda-IOSTests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Wanda_IOS.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Wanda_IOS";
+			};
+			name = Release;
+		};
+		74ED693F2EAB01B100C1D9FC /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = TSKR4SQTM4;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "Jonathan-Jones.Wanda-IOSUITests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = Wanda_IOS;
+			};
+			name = Debug;
+		};
+		74ED69402EAB01B100C1D9FC /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = TSKR4SQTM4;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "Jonathan-Jones.Wanda-IOSUITests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = Wanda_IOS;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		74ED690F2EAB01A800C1D9FC /* Build configuration list for PBXProject "Wanda_IOS" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				74ED69362EAB01B100C1D9FC /* Debug */,
+				74ED69372EAB01B100C1D9FC /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		74ED69382EAB01B100C1D9FC /* Build configuration list for PBXNativeTarget "Wanda_IOS" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				74ED69392EAB01B100C1D9FC /* Debug */,
+				74ED693A2EAB01B100C1D9FC /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		74ED693B2EAB01B100C1D9FC /* Build configuration list for PBXNativeTarget "Wanda_IOSTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				74ED693C2EAB01B100C1D9FC /* Debug */,
+				74ED693D2EAB01B100C1D9FC /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		74ED693E2EAB01B100C1D9FC /* Build configuration list for PBXNativeTarget "Wanda_IOSUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				74ED693F2EAB01B100C1D9FC /* Debug */,
+				74ED69402EAB01B100C1D9FC /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 74ED690C2EAB01A800C1D9FC /* Project object */;
+}

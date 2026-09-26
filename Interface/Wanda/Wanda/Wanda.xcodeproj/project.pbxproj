@@ -15,6 +15,22 @@
 		7408C14A2D035A1700C82F6B /* WandaUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7408C1492D035A1700C82F6B /* WandaUITests.swift */; };
 		7408C14C2D035A1700C82F6B /* WandaUITestsLaunchTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7408C14B2D035A1700C82F6B /* WandaUITestsLaunchTests.swift */; };
 		7489F4652D161D0B0050CD45 /* WandaVoice.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7489F4642D161D0B0050CD45 /* WandaVoice.swift */; };
+		74B0D0012E6A000000000001 /* ChatMessage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 74B0D0002E6A000000000001 /* ChatMessage.swift */; };
+		74B0D0032E6A000000000001 /* CommandParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = 74B0D0022E6A000000000001 /* CommandParser.swift */; };
+		74B0D0052E6A000000000001 /* WandaAPIClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 74B0D0042E6A000000000001 /* WandaAPIClient.swift */; };
+		74B0D0072E6A000000000001 /* ChatViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 74B0D0062E6A000000000001 /* ChatViewModel.swift */; };
+		74B0D0092E6A000000000001 /* SpeechRecognizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 74B0D0082E6A000000000001 /* SpeechRecognizer.swift */; };
+		74B0D00B2E6A000000000001 /* MessageBubble.swift in Sources */ = {isa = PBXBuildFile; fileRef = 74B0D00A2E6A000000000001 /* MessageBubble.swift */; };
+		74B0D00D2E6A000000000001 /* ChatInputBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 74B0D00C2E6A000000000001 /* ChatInputBar.swift */; };
+		74B0D0212E6A000000000001 /* WandaPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 74B0D0202E6A000000000001 /* WandaPanel.swift */; };
+		74B0D0232E6A000000000001 /* VoiceSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 74B0D0222E6A000000000001 /* VoiceSettings.swift */; };
+		74B0D0252E6A000000000001 /* VoiceSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 74B0D0242E6A000000000001 /* VoiceSettingsView.swift */; };
+		74B0D0272E6A000000000001 /* ServerManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 74B0D0262E6A000000000001 /* ServerManager.swift */; };
+		74B0D0292E6A000000000001 /* WakeWordListener.swift in Sources */ = {isa = PBXBuildFile; fileRef = 74B0D0282E6A000000000001 /* WakeWordListener.swift */; };
+		74B0D02B2E6A000000000001 /* Microphone.swift in Sources */ = {isa = PBXBuildFile; fileRef = 74B0D02A2E6A000000000001 /* Microphone.swift */; };
+		74B0D02D2E6A000000000001 /* LocalIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 74B0D02C2E6A000000000001 /* LocalIntent.swift */; };
+		74B0D02F2E6A000000000001 /* LocalAssistant.swift in Sources */ = {isa = PBXBuildFile; fileRef = 74B0D02E2E6A000000000001 /* LocalAssistant.swift */; };
+		74B0D0312E6A000000000001 /* Assistant.swift in Sources */ = {isa = PBXBuildFile; fileRef = 74B0D0302E6A000000000001 /* Assistant.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -48,6 +64,22 @@
 		7408C14B2D035A1700C82F6B /* WandaUITestsLaunchTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WandaUITestsLaunchTests.swift; sourceTree = "<group>"; };
 		7489F4642D161D0B0050CD45 /* WandaVoice.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WandaVoice.swift; sourceTree = "<group>"; };
 		74A62A262D3C672000F07F66 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		74B0D0002E6A000000000001 /* ChatMessage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatMessage.swift; sourceTree = "<group>"; };
+		74B0D0022E6A000000000001 /* CommandParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommandParser.swift; sourceTree = "<group>"; };
+		74B0D0042E6A000000000001 /* WandaAPIClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WandaAPIClient.swift; sourceTree = "<group>"; };
+		74B0D0062E6A000000000001 /* ChatViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatViewModel.swift; sourceTree = "<group>"; };
+		74B0D0082E6A000000000001 /* SpeechRecognizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeechRecognizer.swift; sourceTree = "<group>"; };
+		74B0D00A2E6A000000000001 /* MessageBubble.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MessageBubble.swift; sourceTree = "<group>"; };
+		74B0D00C2E6A000000000001 /* ChatInputBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatInputBar.swift; sourceTree = "<group>"; };
+		74B0D0202E6A000000000001 /* WandaPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WandaPanel.swift; sourceTree = "<group>"; };
+		74B0D0222E6A000000000001 /* VoiceSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceSettings.swift; sourceTree = "<group>"; };
+		74B0D0242E6A000000000001 /* VoiceSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceSettingsView.swift; sourceTree = "<group>"; };
+		74B0D0262E6A000000000001 /* ServerManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServerManager.swift; sourceTree = "<group>"; };
+		74B0D0282E6A000000000001 /* WakeWordListener.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WakeWordListener.swift; sourceTree = "<group>"; };
+		74B0D02A2E6A000000000001 /* Microphone.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Microphone.swift; sourceTree = "<group>"; };
+		74B0D02C2E6A000000000001 /* LocalIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalIntent.swift; sourceTree = "<group>"; };
+		74B0D02E2E6A000000000001 /* LocalAssistant.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalAssistant.swift; sourceTree = "<group>"; };
+		74B0D0302E6A000000000001 /* Assistant.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Assistant.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -102,6 +134,22 @@
 				7489F4642D161D0B0050CD45 /* WandaVoice.swift */,
 				7408C12D2D035A1300C82F6B /* WandaApp.swift */,
 				7408C12F2D035A1300C82F6B /* ContentView.swift */,
+				74B0D0002E6A000000000001 /* ChatMessage.swift */,
+				74B0D0022E6A000000000001 /* CommandParser.swift */,
+				74B0D0042E6A000000000001 /* WandaAPIClient.swift */,
+				74B0D0062E6A000000000001 /* ChatViewModel.swift */,
+				74B0D0082E6A000000000001 /* SpeechRecognizer.swift */,
+				74B0D00A2E6A000000000001 /* MessageBubble.swift */,
+				74B0D00C2E6A000000000001 /* ChatInputBar.swift */,
+				74B0D0202E6A000000000001 /* WandaPanel.swift */,
+				74B0D0222E6A000000000001 /* VoiceSettings.swift */,
+				74B0D0242E6A000000000001 /* VoiceSettingsView.swift */,
+				74B0D0262E6A000000000001 /* ServerManager.swift */,
+				74B0D0282E6A000000000001 /* WakeWordListener.swift */,
+				74B0D02A2E6A000000000001 /* Microphone.swift */,
+				74B0D02C2E6A000000000001 /* LocalIntent.swift */,
+				74B0D02E2E6A000000000001 /* LocalAssistant.swift */,
+				74B0D0302E6A000000000001 /* Assistant.swift */,
 				7408C1312D035A1600C82F6B /* Assets.xcassets */,
 				7408C1362D035A1600C82F6B /* Wanda.entitlements */,
 				7408C1332D035A1600C82F6B /* Preview Content */,
@@ -264,6 +312,22 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				74B0D0012E6A000000000001 /* ChatMessage.swift in Sources */,
+				74B0D0032E6A000000000001 /* CommandParser.swift in Sources */,
+				74B0D0052E6A000000000001 /* WandaAPIClient.swift in Sources */,
+				74B0D0072E6A000000000001 /* ChatViewModel.swift in Sources */,
+				74B0D0092E6A000000000001 /* SpeechRecognizer.swift in Sources */,
+				74B0D00B2E6A000000000001 /* MessageBubble.swift in Sources */,
+				74B0D00D2E6A000000000001 /* ChatInputBar.swift in Sources */,
+				74B0D0212E6A000000000001 /* WandaPanel.swift in Sources */,
+				74B0D0232E6A000000000001 /* VoiceSettings.swift in Sources */,
+				74B0D0252E6A000000000001 /* VoiceSettingsView.swift in Sources */,
+				74B0D0272E6A000000000001 /* ServerManager.swift in Sources */,
+				74B0D0292E6A000000000001 /* WakeWordListener.swift in Sources */,
+				74B0D02B2E6A000000000001 /* Microphone.swift in Sources */,
+				74B0D02D2E6A000000000001 /* LocalIntent.swift in Sources */,
+				74B0D02F2E6A000000000001 /* LocalAssistant.swift in Sources */,
+				74B0D0312E6A000000000001 /* Assistant.swift in Sources */,
 				7489F4652D161D0B0050CD45 /* WandaVoice.swift in Sources */,
 				7408C1302D035A1300C82F6B /* ContentView.swift in Sources */,
 				7408C12E2D035A1300C82F6B /* WandaApp.swift in Sources */,
@@ -437,12 +501,12 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Wanda/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = "";
-				INFOPLIST_KEY_LSApplicationCategoryType = "";
-				INFOPLIST_KEY_LSUIElement = NO;
+				INFOPLIST_KEY_CFBundleDisplayName = Wanda;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
+				INFOPLIST_KEY_LSUIElement = YES;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
-				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Your app needs access to the microphone to record audio for speech recognition.";
-				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "Your app needs access to speech recognition to convert speech into text.";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Wanda listens through your microphone when you tap the mic button, so you can talk instead of type.";
+				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "Wanda turns what you say into text so it can answer you.";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
@@ -471,12 +535,12 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Wanda/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = "";
-				INFOPLIST_KEY_LSApplicationCategoryType = "";
-				INFOPLIST_KEY_LSUIElement = NO;
+				INFOPLIST_KEY_CFBundleDisplayName = Wanda;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
+				INFOPLIST_KEY_LSUIElement = YES;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
-				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Your app needs access to the microphone to record audio for speech recognition.";
-				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "Your app needs access to speech recognition to convert speech into text.";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Wanda listens through your microphone when you tap the mic button, so you can talk instead of type.";
+				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "Wanda turns what you say into text so it can answer you.";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",

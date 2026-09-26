@@ -162,3 +162,6 @@ secrets.json
 *.pem
 *.key
 !*.pub.key
+
+# Kokoro text-to-speech model files (downloaded, ~340 MB)
+server/tts_models/

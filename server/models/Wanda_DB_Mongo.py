@@ -2,6 +2,7 @@ from unittest import result
 from flask import flash
 import pymongo
 import os
+import sys
 from bson import ObjectId
 from dotenv import load_dotenv
 load_dotenv()
@@ -11,7 +12,7 @@ try:
 # return a friendly error if a URI error is thrown 
 except pymongo.errors.ConfigurationError:
   print("An Invalid URI host error was received. Is your Atlas host name correct in your connection string?")
-  os.exit(1)
+  sys.exit(1)
 
 db = client.WandaDB
 

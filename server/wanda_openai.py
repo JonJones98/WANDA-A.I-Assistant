@@ -21,19 +21,26 @@ client = AzureOpenAI(
 )
 
 
-def chat_completion(chat_history, user_input):
+def chat_completion(chat_history, user_input, context=""):
+    """Appends the user's message and the reply to `chat_history` and returns it.
+
+    `context` describes the user's Mac right now (time, music, app in use). It is sent
+    with this request only and not saved, so it doesn't pile up in the history.
+    """
     messages = chat_history
-    messages.append(
-        {
-            "role": "system",
-            "content": "You are a helpful assistant.",
-        }
-    )
+    if not any(m.get("role") == "system" for m in messages):
+        messages.insert(0, {"role": "system", "content": "You are a helpful assistant."})
     messages.append({"role": "user", "content": user_input})
-    print(messages)
+
+    request_messages = list(messages)
+    if context:
+        request_messages.insert(-1, {
+            "role": "system",
+            "content": "Current state of the user's Mac (use it only if relevant):\n" + context,
+        })
     response = client.chat.completions.create(
         # stream=True,
-        messages=messages,
+        messages=request_messages,
         max_completion_tokens=13107,
         temperature=1.0,
         top_p=1.0,

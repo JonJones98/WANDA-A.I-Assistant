@@ -1,43 +1,38 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException, Response
+from pydantic import BaseModel
 import os
+import re
+import subprocess
 from models.Wanda_DB_Mongo import *
 import uuid
 import datetime
 from wanda_openai import *
+import wanda_tts
 
-random_id = str(uuid.uuid4())
 app = FastAPI()
 
 @app.get("/")
 def read_root():
     return {"message": "Welcome to Wanda Voice AI Assistant!"}
 #Local App Calls
+# App names are passed as arguments, never through a shell, so text like
+# "Safari; rm -rf ~" can't run extra commands.
 @app.get("/open")
 def open_app(app: str):
-    try:
-        app_name = app.replace("\%20", " ")
-        print(app_name.title())
-        os.system('open -a ' + app_name.title() + '.app')
-        return {'response': ('Opening ' + app_name.title())}
-    except Exception:
-        return {'response': ('App not found')}
+    app_name = app.strip()
+    result = subprocess.run(["open", "-a", app_name], capture_output=True)
+    if result.returncode == 0:
+        return {'response': f'Opening {app_name.title()}'}
+    return {'response': f"I couldn't find an app called {app_name.title()}"}
 @app.get("/close")
 def close_app(app: str):
-    try:
-        app_name = app.replace("+", " ")
-        # For Spotify and most macOS apps, process name is lowercase
-        process_name = app_name.lower()
-        # Try pkill with both lower and title case
-        result = os.system(f'pkill -f "{process_name}"')
-        if result != 0:
-            # Try with .app extension
-            result = os.system(f'pkill -f "{process_name}.app"')
-        if result == 0:
-            return {'response': f'Closing {app_name.title()}'}
-        else:
-            return {'response': f'Could not close {app_name.title()}'}
-    except Exception:
-        return {'response': ('App not found')}
+    app_name = app.strip()
+    # Match processes inside "<name>.app/", case-insensitive, with the name treated literally
+    pattern = re.escape(f"/{app_name}.app/")
+    result = subprocess.run(["pkill", "-i", "-f", pattern], capture_output=True)
+    if result.returncode == 0:
+        return {'response': f'Closing {app_name.title()}'}
+    return {'response': f'Could not close {app_name.title()}'}
 @app.get("/custom_command/{name}")
 def custom_command(name: str):
     # Make db call to get custom command for app
@@ -51,20 +46,29 @@ def custom_command(name: str):
         return {"error": "Custom command not found"}
 
 #GenAI Calls
+class ChatRequest(BaseModel):
+    user_input: str
+    chat_id: str = ""
+    context: str = ""
+
+@app.post("/genAI/chat")
+def post_chat(request: ChatRequest):
+    return init_chat(request.user_input, request.chat_id, request.context)
+
 @app.get("/genAI/chat")
-def init_chat(user_input: str,id: str=""):
+def init_chat(user_input: str,id: str="", context: str=""):
     # Add logic to create GenAI application
     response = None
     try:
         if id == "":
-            id = random_id
+            id = str(uuid.uuid4())
             chat_history = []
-            response = chat_completion(chat_history, user_input)
+            response = chat_completion(chat_history, user_input, context)
             add_chat_history(chat=response,id=id)
         else:
             chat_history = get_chat_history(id)
             print(chat_history.chat)
-            response = chat_completion(chat_history.chat, user_input)
+            response = chat_completion(chat_history.chat, user_input, context)
             update_chat_history(chat=response,id=id)
     except Exception as e:
         print(f"Error retrieving chat history: {e}")
@@ -77,6 +81,31 @@ def end_chat():
     print("Ending GenAI chat session.")
     end_chat()
     return {"status": f"Ending GenAI"}
+
+#Text to speech (Kokoro, runs locally)
+class SpeakRequest(BaseModel):
+    text: str
+    voice: str = wanda_tts.DEFAULT_VOICE
+    speed: float = 1.0
+
+@app.get("/tts/voices")
+def tts_voices():
+    try:
+        return {"voices": wanda_tts.list_voices()}
+    except wanda_tts.TTSUnavailable as e:
+        raise HTTPException(status_code=503, detail=str(e))
+
+@app.post("/tts/speak")
+def tts_speak(request: SpeakRequest):
+    if not request.text.strip():
+        raise HTTPException(status_code=400, detail="text is empty")
+    try:
+        audio = wanda_tts.synthesize(request.text, request.voice, request.speed)
+    except wanda_tts.TTSUnavailable as e:
+        raise HTTPException(status_code=503, detail=str(e))
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    return Response(content=audio, media_type="audio/wav")
 
 #DB 
 # Chat_History
