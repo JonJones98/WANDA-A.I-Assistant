@@ -35,11 +35,6 @@ struct ChatReply: Decodable {
     }
 }
 
-struct HistoryEntry: Decodable {
-    let role: String
-    let content: String
-}
-
 /// A Kokoro text-to-speech voice offered by the server.
 struct KokoroVoice: Decodable, Equatable {
     let id: String
@@ -91,8 +86,10 @@ struct WandaAPIClient {
         return request
     }
 
-    func historyRequest(chatID: String) -> URLRequest {
-        URLRequest(url: url(path: "db/chat_history", query: ["id": chatID]))
+    func deleteHistoryRequest(chatID: String) -> URLRequest {
+        var request = URLRequest(url: url(path: "db/chat_history/delete", query: ["id": chatID]))
+        request.httpMethod = "DELETE"
+        return request
     }
 
     // MARK: Calls
@@ -106,11 +103,9 @@ struct WandaAPIClient {
         return try decode(Reply.self, from: try await send(appRequest(action, app: app))).response
     }
 
-    /// Returns an empty list when the server has no history for this chat.
-    func history(chatID: String) async throws -> [HistoryEntry] {
-        struct Record: Decodable { let chat: [HistoryEntry] }
-        let data = try await send(historyRequest(chatID: chatID))
-        return (try? JSONDecoder().decode(Record.self, from: data))?.chat ?? []
+    /// Deletes the server's copy of a chat.
+    func deleteHistory(chatID: String) async throws {
+        _ = try await send(deleteHistoryRequest(chatID: chatID))
     }
 
     func kokoroVoices() async throws -> [KokoroVoice] {

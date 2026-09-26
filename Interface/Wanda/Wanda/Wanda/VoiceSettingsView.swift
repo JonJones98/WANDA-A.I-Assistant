@@ -9,6 +9,8 @@ struct VoiceSettingsView: View {
     @ObservedObject var settings: VoiceSettings
     @Binding var readRepliesAloud: Bool
     @Binding var wakeWordEnabled: Bool
+    @Binding var nameOnlyWhenOpen: Bool
+    @Binding var nickname: String
     let onPreview: () -> Void
 
     @State private var showAllLanguages = false
@@ -28,6 +30,21 @@ struct VoiceSettingsView: View {
                 .font(.caption)
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
+
+            Group {
+                Toggle("Just say the name when the window is open", isOn: $nameOnlyWhenOpen)
+                HStack {
+                    Text("Nickname")
+                    TextField("Optional, e.g. Jarvis", text: $nickname)
+                        .textFieldStyle(.roundedBorder)
+                        .accessibilityIdentifier("nicknameField")
+                }
+                Text(nameHint)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .disabled(!wakeWordEnabled)
 
             Divider()
 
@@ -68,6 +85,16 @@ struct VoiceSettingsView: View {
     }
 
     private var isKokoroSelected: Bool { settings.kokoroVoiceName != nil }
+
+    private var nameHint: String {
+        let names = (["Wanda"] + WakePhrase(nickname: nickname).nicknames.map(\.capitalized))
+            .map { "“\($0)”" }
+        let list = ListFormatter.localizedString(byJoining: names)
+        let open = nameOnlyWhenOpen
+            ? "With the window open, just say \(list). "
+            : ""
+        return open + "With it hidden, say “Hey …” first. Separate several nicknames with commas."
+    }
 
     @ViewBuilder
     private func voicePicker(_ voices: [VoiceOption]) -> some View {

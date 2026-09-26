@@ -7,13 +7,19 @@ import Foundation
 
 @MainActor
 final class ChatViewModel: ObservableObject {
-    private static let chatIDKey = "WandaChatID"
+    private static let lastConversationKey = "WandaLastConversation"
     private static let readAloudKey = "WandaReadRepliesAloud"
-    private static let greeting = "Hello! How can I help you today?"
+    static let greeting = ChatMessage(
+        id: UUID(uuidString: "00000000-0000-0000-0000-000000000001")!,
+        text: "Hello! How can I help you today?", sender: .wanda, date: nil
+    )
 
+    /// The open chat's messages (errors included; they aren't saved).
     @Published private(set) var messages: [ChatMessage] = []
+    @Published private(set) var currentConversationID: UUID?
     @Published var draft = ""
-    @Published private(set) var isWaiting = false
+    /// The chat waiting for a reply, if any. One request runs at a time.
+    @Published private(set) var pendingConversationID: UUID?
     /// Read every reply aloud, not just replies to dictated messages.
     @Published var readRepliesAloud: Bool {
         didSet {
@@ -24,25 +30,34 @@ final class ChatViewModel: ObservableObject {
 
     let voiceSettings: VoiceSettings
     let server: ServerManager
+    let store: ChatStore
     private let api: WandaAPIClient
-    private let voice: WandaVoice
+    let voice: WandaVoice
     private let local = LocalAssistant()
     private let defaults: UserDefaults
     private var hasStarted = false
 
-    /// Server-side conversation ID, kept across launches so history can be restored.
-    private var chatID: String {
-        get { defaults.string(forKey: Self.chatIDKey) ?? "" }
-        set { defaults.set(newValue, forKey: Self.chatIDKey) }
+    /// What the chat shows: a greeting until the conversation has started.
+    var displayMessages: [ChatMessage] {
+        messages.contains { $0.sender != .error } ? messages : [Self.greeting] + messages
+    }
+
+    /// True while the open chat is waiting for its reply (shows the typing indicator).
+    var isWaiting: Bool {
+        pendingConversationID != nil && pendingConversationID == currentConversationID
     }
 
     var canSend: Bool {
-        !isWaiting && !draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        pendingConversationID == nil && !draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
 
-    init(server: ServerManager, api: WandaAPIClient = WandaAPIClient(), defaults: UserDefaults = .standard) {
+    init(
+        server: ServerManager, api: WandaAPIClient = WandaAPIClient(),
+        store: ChatStore? = nil, defaults: UserDefaults = .standard
+    ) {
         self.server = server
         self.api = api
+        self.store = store ?? ChatStore()
         self.defaults = defaults
         self.readRepliesAloud = defaults.bool(forKey: Self.readAloudKey)
         self.voiceSettings = VoiceSettings(api: api, defaults: defaults)
@@ -57,44 +72,61 @@ final class ChatViewModel: ObservableObject {
         voice.stop()
     }
 
+    /// Reopens the last chat, then makes sure the server is up and loads voices.
     func start() async {
         guard !hasStarted else { return }
         hasStarted = true
-        messages = [ChatMessage(text: Self.greeting, sender: .wanda)]
+        if let last = defaults.string(forKey: Self.lastConversationKey).flatMap(UUID.init(uuidString:)),
+           store.conversation(last) != nil {
+            open(last)
+        }
 
-        // The server may still be starting; voices and history both come from it.
         let serverIsRunning = await server.ensureRunning()
         Task { await voiceSettings.loadVoices() }
-        guard serverIsRunning else {
-            if case .failed(let reason) = server.status {
-                messages.append(ChatMessage(text: "I couldn't start my server. \(reason)", sender: .error))
-            }
-            return
+        if !serverIsRunning, case .failed(let reason) = server.status {
+            messages.append(ChatMessage(text: "I couldn't start my server. \(reason)", sender: .error))
         }
+    }
 
-        if !chatID.isEmpty, let history = try? await api.history(chatID: chatID) {
-            let restored: [ChatMessage] = history.compactMap { entry in
-                switch entry.role {
-                case "user": return ChatMessage(text: entry.content, sender: .user, date: nil)
-                case "assistant": return ChatMessage(text: entry.content, sender: .wanda, date: nil)
-                default: return nil
-                }
-            }
-            if !restored.isEmpty, messages.count == 1 { messages = restored }
-        }
+    // MARK: Chats
+
+    func open(_ id: UUID) {
+        guard let conversation = store.conversation(id) else { return }
+        voice.stop()
+        currentConversationID = id
+        messages = conversation.messages
+        defaults.set(id.uuidString, forKey: Self.lastConversationKey)
     }
 
     func newChat() {
         voice.stop()
-        chatID = ""
-        messages = [ChatMessage(text: Self.greeting, sender: .wanda)]
+        currentConversationID = nil
+        messages = []
+        defaults.removeObject(forKey: Self.lastConversationKey)
     }
 
-    /// Sends dictated text right away and reads the reply aloud. If a reply is still
-    /// pending, the text is left in the input field instead so it isn't lost.
+    func rename(_ id: UUID, to title: String) {
+        store.rename(id, to: title)
+    }
+
+    func delete(_ id: UUID) {
+        let serverChatID = store.conversation(id)?.serverChatID ?? ""
+        store.delete(id)
+        if currentConversationID == id { newChat() }
+        // Also remove the server's copy; failures don't matter (it may be offline).
+        if !serverChatID.isEmpty {
+            Task { [api] in try? await api.deleteHistory(chatID: serverChatID) }
+        }
+    }
+
+    // MARK: Sending
+
+    /// Sends dictated text (wake phrase already removed) right away and reads the reply
+    /// aloud. If a reply is still pending, the text is left in the input field instead so
+    /// it isn't lost.
     func sendDictation(_ text: String) {
-        draft = WakePhrase.strip(from: text)
-        guard !isWaiting else { return }
+        draft = text
+        guard pendingConversationID == nil else { return }
         send(speakReply: true)
     }
 
@@ -104,24 +136,52 @@ final class ChatViewModel: ObservableObject {
         let text = draft.trimmingCharacters(in: .whitespacesAndNewlines)
         draft = ""
         voice.stop()
-        messages.append(ChatMessage(text: text, sender: .user))
-        isWaiting = true
+
+        let conversationID = currentConversationID ?? UUID()
+        if currentConversationID == nil {
+            currentConversationID = conversationID
+            defaults.set(conversationID.uuidString, forKey: Self.lastConversationKey)
+        }
+        append(ChatMessage(text: text, sender: .user), to: conversationID)
+        pendingConversationID = conversationID
 
         Task {
-            defer { isWaiting = false }
+            defer { pendingConversationID = nil }
             do {
-                let (reply, isLocal) = try await reply(to: text)
-                messages.append(ChatMessage(text: reply, sender: .wanda, isLocal: isLocal))
-                if speakReply || readRepliesAloud { voice.speak(reply) }
+                let reply = try await reply(to: text, in: conversationID)
+                append(ChatMessage(text: reply.text, sender: .wanda, isLocal: reply.isLocal), to: conversationID)
+                if conversationID == currentConversationID, speakReply || readRepliesAloud {
+                    voice.speak(reply.text)
+                }
             } catch {
-                messages.append(ChatMessage(text: error.localizedDescription, sender: .error))
+                // Errors are shown but not saved, and only if that chat is still open.
+                if conversationID == currentConversationID {
+                    messages.append(ChatMessage(text: error.localizedDescription, sender: .error))
+                }
             }
         }
     }
 
+    /// Adds a message to a chat and saves it. The chat may no longer be the one on screen
+    /// if the user switched while waiting for a reply.
+    private func append(_ message: ChatMessage, to conversationID: UUID) {
+        if conversationID == currentConversationID {
+            messages.append(message)
+        }
+        let now = Date()
+        var conversation = store.conversation(conversationID)
+            ?? Conversation(id: conversationID, title: "", messages: [], serverChatID: "", createdAt: now, updatedAt: now)
+        conversation.messages.append(message)
+        if conversation.title.isEmpty {
+            conversation.title = Conversation.title(from: conversation.messages)
+        }
+        conversation.updatedAt = now
+        store.save(conversation)
+    }
+
     /// Answers on the Mac when possible (time, music, apps…); otherwise asks the server,
     /// sending a short description of what's happening on the Mac as context.
-    private func reply(to text: String) async throws -> (text: String, isLocal: Bool) {
+    private func reply(to text: String, in conversationID: UUID) async throws -> (text: String, isLocal: Bool) {
         if let answer = await local.answer(text) {
             return (answer, true)
         }
@@ -136,8 +196,12 @@ final class ChatViewModel: ObservableObject {
         case .close(let app):
             return (try await api.runAppAction(.close, app: app), false)
         case .chat(let message):
-            let reply = try await api.chat(message: message, chatID: chatID, context: await local.context())
-            chatID = reply.chatID
+            let serverChatID = store.conversation(conversationID)?.serverChatID ?? ""
+            let reply = try await api.chat(message: message, chatID: serverChatID, context: await local.context())
+            if reply.chatID != serverChatID, var conversation = store.conversation(conversationID) {
+                conversation.serverChatID = reply.chatID
+                store.save(conversation)
+            }
             return (reply.response, false)
         }
     }

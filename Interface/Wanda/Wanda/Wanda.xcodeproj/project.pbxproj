@@ -31,6 +31,12 @@
 		74B0D02D2E6A000000000001 /* LocalIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 74B0D02C2E6A000000000001 /* LocalIntent.swift */; };
 		74B0D02F2E6A000000000001 /* LocalAssistant.swift in Sources */ = {isa = PBXBuildFile; fileRef = 74B0D02E2E6A000000000001 /* LocalAssistant.swift */; };
 		74B0D0312E6A000000000001 /* Assistant.swift in Sources */ = {isa = PBXBuildFile; fileRef = 74B0D0302E6A000000000001 /* Assistant.swift */; };
+		74B0D0352E6A000000000001 /* ChatStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 74B0D0342E6A000000000001 /* ChatStore.swift */; };
+		74B0D0372E6A000000000001 /* WindowLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = 74B0D0362E6A000000000001 /* WindowLayout.swift */; };
+		74B0D0392E6A000000000001 /* ChatHistorySidebar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 74B0D0382E6A000000000001 /* ChatHistorySidebar.swift */; };
+		74B0D03B2E6A000000000001 /* MinimalView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 74B0D03A2E6A000000000001 /* MinimalView.swift */; };
+		74B0D03D2E6A000000000001 /* ReplyFormatting.swift in Sources */ = {isa = PBXBuildFile; fileRef = 74B0D03C2E6A000000000001 /* ReplyFormatting.swift */; };
+		74B0D03F2E6A000000000001 /* WandaOrb.swift in Sources */ = {isa = PBXBuildFile; fileRef = 74B0D03E2E6A000000000001 /* WandaOrb.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -80,6 +86,12 @@
 		74B0D02C2E6A000000000001 /* LocalIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalIntent.swift; sourceTree = "<group>"; };
 		74B0D02E2E6A000000000001 /* LocalAssistant.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalAssistant.swift; sourceTree = "<group>"; };
 		74B0D0302E6A000000000001 /* Assistant.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Assistant.swift; sourceTree = "<group>"; };
+		74B0D0342E6A000000000001 /* ChatStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatStore.swift; sourceTree = "<group>"; };
+		74B0D0362E6A000000000001 /* WindowLayout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WindowLayout.swift; sourceTree = "<group>"; };
+		74B0D0382E6A000000000001 /* ChatHistorySidebar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatHistorySidebar.swift; sourceTree = "<group>"; };
+		74B0D03A2E6A000000000001 /* MinimalView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MinimalView.swift; sourceTree = "<group>"; };
+		74B0D03C2E6A000000000001 /* ReplyFormatting.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReplyFormatting.swift; sourceTree = "<group>"; };
+		74B0D03E2E6A000000000001 /* WandaOrb.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WandaOrb.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -150,6 +162,12 @@
 				74B0D02C2E6A000000000001 /* LocalIntent.swift */,
 				74B0D02E2E6A000000000001 /* LocalAssistant.swift */,
 				74B0D0302E6A000000000001 /* Assistant.swift */,
+				74B0D0342E6A000000000001 /* ChatStore.swift */,
+				74B0D0362E6A000000000001 /* WindowLayout.swift */,
+				74B0D0382E6A000000000001 /* ChatHistorySidebar.swift */,
+				74B0D03A2E6A000000000001 /* MinimalView.swift */,
+				74B0D03C2E6A000000000001 /* ReplyFormatting.swift */,
+				74B0D03E2E6A000000000001 /* WandaOrb.swift */,
 				7408C1312D035A1600C82F6B /* Assets.xcassets */,
 				7408C1362D035A1600C82F6B /* Wanda.entitlements */,
 				7408C1332D035A1600C82F6B /* Preview Content */,
@@ -246,7 +264,7 @@
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
 				LastSwiftUpdateCheck = 1520;
-				LastUpgradeCheck = 1520;
+				LastUpgradeCheck = 1620;
 				TargetAttributes = {
 					7408C1292D035A1300C82F6B = {
 						CreatedOnToolsVersion = 15.2;
@@ -328,6 +346,12 @@
 				74B0D02D2E6A000000000001 /* LocalIntent.swift in Sources */,
 				74B0D02F2E6A000000000001 /* LocalAssistant.swift in Sources */,
 				74B0D0312E6A000000000001 /* Assistant.swift in Sources */,
+				74B0D0352E6A000000000001 /* ChatStore.swift in Sources */,
+				74B0D0372E6A000000000001 /* WindowLayout.swift in Sources */,
+				74B0D0392E6A000000000001 /* ChatHistorySidebar.swift in Sources */,
+				74B0D03B2E6A000000000001 /* MinimalView.swift in Sources */,
+				74B0D03D2E6A000000000001 /* ReplyFormatting.swift in Sources */,
+				74B0D03F2E6A000000000001 /* WandaOrb.swift in Sources */,
 				7489F4652D161D0B0050CD45 /* WandaVoice.swift in Sources */,
 				7408C1302D035A1300C82F6B /* ContentView.swift in Sources */,
 				7408C12E2D035A1300C82F6B /* WandaApp.swift in Sources */,
@@ -401,6 +425,7 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
+				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
@@ -464,6 +489,7 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
+				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
@@ -495,6 +521,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
+				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_ASSET_PATHS = "\"Wanda/Preview Content\"";
 				DEVELOPMENT_TEAM = TSKR4SQTM4;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -529,6 +556,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
+				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_ASSET_PATHS = "\"Wanda/Preview Content\"";
 				DEVELOPMENT_TEAM = TSKR4SQTM4;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -556,10 +584,10 @@
 		7408C1532D035A1700C82F6B /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = TSKR4SQTM4;
 				GENERATE_INFOPLIST_FILE = YES;
 				MACOSX_DEPLOYMENT_TARGET = 13.6;
@@ -575,10 +603,10 @@
 		7408C1542D035A1700C82F6B /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = TSKR4SQTM4;
 				GENERATE_INFOPLIST_FILE = YES;
 				MACOSX_DEPLOYMENT_TARGET = 13.6;
@@ -594,9 +622,9 @@
 		7408C1562D035A1700C82F6B /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = TSKR4SQTM4;
 				GENERATE_INFOPLIST_FILE = YES;
 				MARKETING_VERSION = 1.0;
@@ -611,9 +639,9 @@
 		7408C1572D035A1700C82F6B /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = TSKR4SQTM4;
 				GENERATE_INFOPLIST_FILE = YES;
 				MARKETING_VERSION = 1.0;

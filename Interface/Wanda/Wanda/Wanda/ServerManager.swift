@@ -6,8 +6,7 @@
 import Foundation
 
 /// Makes sure Wanda's Python server is running, starting it from the project's
-/// `server` folder when it isn't. A server Wanda started is stopped when Wanda quits;
-/// one that was already running is left alone.
+/// `server` folder when it isn't, and stops it when Wanda quits (`stopServer()`).
 @MainActor
 final class ServerManager: ObservableObject {
     enum Status: Equatable {
@@ -26,8 +25,10 @@ final class ServerManager: ObservableObject {
     private var process: Process?
     private var pendingCheck: Task<Bool, Never>?
 
-    nonisolated static let logURL = FileManager.default.homeDirectoryForCurrentUser
+    nonisolated static let defaultLogURL = FileManager.default.homeDirectoryForCurrentUser
         .appendingPathComponent("Library/Logs/Wanda/server.log")
+    /// Where the server's output goes.
+    let logURL: URL
 
     /// The server folder: a `WandaServerDirectory` user default if set, otherwise the
     /// path Xcode filled into Info.plist at build time (the repo's `server` folder).
@@ -42,8 +43,10 @@ final class ServerManager: ObservableObject {
         baseURL: URL = WandaAPIClient.defaultBaseURL,
         serverDirectory: URL? = ServerManager.configuredServerDirectory,
         pythonURL: URL? = nil,
-        startupTimeout: Duration = .seconds(45)
+        startupTimeout: Duration = .seconds(45),
+        logURL: URL = ServerManager.defaultLogURL
     ) {
+        self.logURL = logURL
         self.baseURL = baseURL
         self.serverDirectory = serverDirectory
         self.pythonURL = pythonURL ?? serverDirectory?.appendingPathComponent("wandaenv/bin/python")
@@ -62,7 +65,29 @@ final class ServerManager: ObservableObject {
         return isRunning
     }
 
-    /// Stops the server if Wanda started it.
+    /// Stops Wanda's server, whether Wanda started it or it was already running (started
+    /// in Terminal, or left over from a crash). Only processes running `uvicorn` from
+    /// Wanda's server folder on Wanda's port are touched; each gets a few seconds to shut
+    /// down cleanly before it's forced.
+    func stopServer(timeout: TimeInterval = 3) {
+        let own = process.flatMap { $0.isRunning ? $0 : nil }
+        var pids = Set(Self.serverProcessIDs(port: baseURL.port ?? 8000, directory: serverDirectory))
+        if let own { pids.remove(own.processIdentifier) }
+        own?.terminate()
+        for pid in pids { kill(pid, SIGTERM) }
+
+        func isRunning(_ pid: pid_t) -> Bool { kill(pid, 0) == 0 }
+        let deadline = Date().addingTimeInterval(timeout)
+        while Date() < deadline, own?.isRunning == true || pids.contains(where: isRunning) {
+            Thread.sleep(forTimeInterval: 0.05)
+        }
+        if let own, own.isRunning { kill(own.processIdentifier, SIGKILL) }
+        for pid in pids where isRunning(pid) { kill(pid, SIGKILL) }
+        process = nil
+        status = .unknown
+    }
+
+    /// Stops the server only if Wanda started it (used when a start attempt times out).
     func stopIfLaunched() {
         guard let process, process.isRunning else { return }
         process.terminate()
@@ -89,12 +114,12 @@ final class ServerManager: ObservableObject {
             }
             if process?.isRunning != true {
                 process = nil
-                status = .failed("The server stopped while starting. See \(Self.logURL.path) for details.")
+                status = .failed("The server stopped while starting. See \(logURL.path) for details.")
                 return false
             }
         }
         stopIfLaunched()
-        status = .failed("The server didn't respond within \(startupTimeout). See \(Self.logURL.path).")
+        status = .failed("The server didn't respond within \(startupTimeout). See \(logURL.path).")
         return false
     }
 
@@ -105,6 +130,48 @@ final class ServerManager: ObservableObject {
         guard let (data, response) = try? await URLSession.shared.data(for: request),
               (response as? HTTPURLResponse)?.statusCode == 200 else { return false }
         return String(decoding: data, as: UTF8.self).contains("Wanda")
+    }
+
+    /// Processes serving Wanda: listening on `port`, running uvicorn, from `directory`.
+    /// Includes uvicorn's `--reload` watcher so it can't start the server again.
+    nonisolated static func serverProcessIDs(port: Int, directory: URL?) -> [pid_t] {
+        guard let directory else { return [] }
+        let listening = run("/usr/sbin/lsof", ["-nP", "-iTCP:\(port)", "-sTCP:LISTEN", "-t"])
+            .split(whereSeparator: \.isNewline).compactMap { pid_t($0) }
+        var result = Set<pid_t>()
+        for pid in listening where isWandaServer(pid, directory: directory) {
+            result.insert(pid)
+            if let parent = pid_t(run("/bin/ps", ["-o", "ppid=", "-p", String(pid)]).trimmingCharacters(in: .whitespaces)),
+               parent > 1, isWandaServer(parent, directory: directory) {
+                result.insert(parent)
+            }
+        }
+        return Array(result)
+    }
+
+    private nonisolated static func isWandaServer(_ pid: pid_t, directory: URL) -> Bool {
+        let command = run("/bin/ps", ["-o", "command=", "-p", String(pid)])
+        guard command.contains("uvicorn") else { return false }
+        // `lsof -Fn` prints the working directory as a line starting with "n".
+        let cwd = run("/usr/sbin/lsof", ["-a", "-p", String(pid), "-d", "cwd", "-Fn"])
+            .split(whereSeparator: \.isNewline)
+            .first { $0.hasPrefix("n") }
+            .map { String($0.dropFirst()) }
+        let expected = directory.resolvingSymlinksInPath().standardizedFileURL.path
+        return cwd.map { URL(fileURLWithPath: $0).resolvingSymlinksInPath().standardizedFileURL.path } == expected
+    }
+
+    private nonisolated static func run(_ executable: String, _ arguments: [String]) -> String {
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: executable)
+        process.arguments = arguments
+        let output = Pipe()
+        process.standardOutput = output
+        process.standardError = FileHandle.nullDevice
+        guard (try? process.run()) != nil else { return "" }
+        let data = output.fileHandleForReading.readDataToEndOfFile()
+        process.waitUntilExit()
+        return String(decoding: data, as: UTF8.self)
     }
 
     /// Starts uvicorn in the background. Returns an error message, or nil on success.
@@ -120,9 +187,9 @@ final class ServerManager: ObservableObject {
             return "The server's Python environment is missing (\(pythonURL.path)). Create it with: python3 -m venv wandaenv && wandaenv/bin/pip install -r requirements.txt"
         }
 
-        try? fileManager.createDirectory(at: Self.logURL.deletingLastPathComponent(), withIntermediateDirectories: true)
-        fileManager.createFile(atPath: Self.logURL.path, contents: nil)
-        let log = try? FileHandle(forWritingTo: Self.logURL)
+        try? fileManager.createDirectory(at: logURL.deletingLastPathComponent(), withIntermediateDirectories: true)
+        fileManager.createFile(atPath: logURL.path, contents: nil)
+        let log = try? FileHandle(forWritingTo: logURL)
 
         let process = Process()
         process.executableURL = pythonURL

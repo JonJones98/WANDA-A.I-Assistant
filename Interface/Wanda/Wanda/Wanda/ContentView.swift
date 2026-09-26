@@ -8,21 +8,54 @@
 import SwiftUI
 
 struct ContentView: View {
-    // Owned by `Assistant`, which keeps them running while the window is hidden.
+    // Owned by `Assistant` and `AppDelegate`, which keep them running while the window is hidden.
     @ObservedObject private var viewModel: ChatViewModel
     @ObservedObject private var speech: SpeechRecognizer
     @ObservedObject private var wakeWord: WakeWordListener
+    @ObservedObject private var layout: WindowLayout
     @State private var showsVoiceSettings = false
 
     private let bottomID = "bottom"
 
-    init(assistant: Assistant) {
+    init(assistant: Assistant, layout: WindowLayout) {
         viewModel = assistant.chat
         speech = assistant.speech
         wakeWord = assistant.wakeWord
+        self.layout = layout
     }
 
     var body: some View {
+        switch layout.mode {
+        case .normal:
+            normalView
+        case .minimal:
+            minimalView
+        }
+    }
+
+    // MARK: Normal view
+
+    private var normalView: some View {
+        HStack(spacing: 0) {
+            if layout.showsSidebar {
+                ChatHistorySidebar(
+                    store: viewModel.store,
+                    currentID: viewModel.currentConversationID,
+                    onSelect: viewModel.open,
+                    onNewChat: viewModel.newChat,
+                    onRename: viewModel.rename,
+                    onDelete: viewModel.delete
+                )
+                .frame(width: WindowLayout.sidebarWidth)
+                .transition(.move(edge: .leading))
+                Divider()
+            }
+            chatColumn
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
+    private var chatColumn: some View {
         VStack(spacing: 0) {
             header
             Divider()
@@ -49,11 +82,18 @@ struct ContentView: View {
             )
             .padding(10)
         }
-        .frame(width: 400, height: 520)
+        .frame(minWidth: WindowLayout.minimumChatSize.width, maxWidth: .infinity, maxHeight: .infinity)
     }
 
     private var header: some View {
         HStack(spacing: 8) {
+            Button {
+                withAnimation(.easeInOut(duration: 0.2)) { layout.showsSidebar.toggle() }
+            } label: {
+                Image(systemName: "sidebar.left")
+            }
+            .help(layout.showsSidebar ? "Hide chat history" : "Show chat history")
+            .accessibilityIdentifier("sidebarButton")
             Image("AppIcon")
             Text("Wanda")
                 .font(.headline)
@@ -77,13 +117,28 @@ struct ContentView: View {
                     settings: viewModel.voiceSettings,
                     readRepliesAloud: $viewModel.readRepliesAloud,
                     wakeWordEnabled: $wakeWord.isEnabled,
+                    nameOnlyWhenOpen: $wakeWord.nameOnlyWhenOpen,
+                    nickname: $wakeWord.nickname,
                     onPreview: viewModel.previewVoice
                 )
             }
+            Button {
+                layout.toggleExpanded()
+            } label: {
+                Image(systemName: layout.isExpanded
+                      ? "arrow.down.right.and.arrow.up.left" : "arrow.up.left.and.arrow.down.right")
+            }
+            .help(layout.isExpanded ? "Smaller window" : "Larger window")
+            Button {
+                layout.mode = .minimal
+            } label: {
+                Image(systemName: "rectangle.compress.vertical")
+            }
+            .help("Minimal view")
+            .accessibilityIdentifier("minimalModeButton")
             Button(action: viewModel.newChat) {
                 Image(systemName: "square.and.pencil")
             }
-            .disabled(viewModel.isWaiting)
             .help("New chat")
             Button {
                 NSApp.keyWindow?.orderOut(nil)
@@ -107,11 +162,12 @@ struct ContentView: View {
     }
 
     private var messageList: some View {
-        ScrollViewReader { proxy in
+        let messages = viewModel.displayMessages
+        return ScrollViewReader { proxy in
             ScrollView {
                 LazyVStack(spacing: 8) {
-                    ForEach(Array(viewModel.messages.enumerated()), id: \.element.id) { index, message in
-                        if let date = message.date, showsTimestamp(at: index) {
+                    ForEach(Array(messages.enumerated()), id: \.element.id) { index, message in
+                        if let date = message.date, showsTimestamp(at: index, in: messages) {
                             Text(date, style: .time)
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
@@ -130,7 +186,32 @@ struct ContentView: View {
             }
             .onChange(of: viewModel.messages.count) { _ in scrollToBottom(proxy) }
             .onChange(of: viewModel.isWaiting) { _ in scrollToBottom(proxy) }
+            .onChange(of: viewModel.currentConversationID) { _ in
+                // Jump (not scroll) to the end of a chat opened from the sidebar.
+                proxy.scrollTo(bottomID, anchor: .bottom)
+            }
         }
+    }
+
+    // MARK: Minimal view
+
+    private var minimalView: some View {
+        MinimalView(
+            chat: viewModel,
+            speech: speech,
+            onClose: { NSApp.keyWindow?.orderOut(nil) },
+            onToggleMic: { Task { await speech.toggle() } },
+            onShowFullView: { layout.mode = .normal }
+        )
+        .frame(width: WindowLayout.minimalWidth)
+        .fixedSize(horizontal: false, vertical: true)
+        .background(GeometryReader { geometry in
+            Color.clear.preference(key: MinimalHeightKey.self, value: geometry.size.height)
+        })
+        .onPreferenceChange(MinimalHeightKey.self) { [layout] height in
+            Task { @MainActor in layout.minimalHeight = max(56, height) }
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
     }
 
     private func send() {
@@ -146,10 +227,17 @@ struct ContentView: View {
     }
 
     /// Show the time above the first message and after a gap of 5+ minutes.
-    private func showsTimestamp(at index: Int) -> Bool {
-        guard let date = viewModel.messages[index].date else { return false }
-        guard index > 0, let previous = viewModel.messages[index - 1].date else { return true }
+    private func showsTimestamp(at index: Int, in messages: [ChatMessage]) -> Bool {
+        guard let date = messages[index].date else { return false }
+        guard index > 0, let previous = messages[index - 1].date else { return true }
         return date.timeIntervalSince(previous) > 5 * 60
+    }
+}
+
+private struct MinimalHeightKey: PreferenceKey {
+    static var defaultValue: CGFloat = 0
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+        value = max(value, nextValue())
     }
 }
 
@@ -210,5 +298,5 @@ private struct ServerStatusDot: View {
 }
 
 #Preview {
-    ContentView(assistant: Assistant(server: ServerManager(), microphone: Microphone()))
+    ContentView(assistant: Assistant(server: ServerManager(), microphone: Microphone()), layout: WindowLayout())
 }

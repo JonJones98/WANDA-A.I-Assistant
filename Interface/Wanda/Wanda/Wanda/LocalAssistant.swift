@@ -36,8 +36,25 @@ final class LocalAssistant {
         return await answer(intent)
     }
 
+    /// Wanda's built-in abilities that don't use the AI, with example phrases.
+    /// Shown by "list tools"; keep in sync with `LocalIntentParser` and `CommandParser`.
+    static let tools: [(name: String, examples: String)] = [
+        ("Time and date", "“what time is it”, “what’s today’s date”"),
+        ("Music (Spotify or Apple Music)", "“what’s playing”, “pause”, “play”, “next song”, “previous song”"),
+        ("Open and close apps", "“open Safari”, “close Spotify”"),
+        ("Apps in use", "“what app am I using”, “what apps are open”"),
+        ("Disk space", "“how much disk space do I have left”"),
+        ("Volume", "“what’s the volume”, “set volume to 40”, “turn it up”, “mute”"),
+        ("This list", "“list tools”"),
+    ]
+
     func answer(_ intent: LocalIntent) async -> String {
         switch intent {
+        case .tools:
+            let lines = Self.tools.map { "• \($0.name): \($0.examples)" }
+            return (["Here’s what I can do on your Mac without AI:"] + lines
+                + ["Say “Hey Wanda” to start talking. Anything else goes to the AI."])
+                .joined(separator: "\n")
         case .time:
             return "It's \(Date().formatted(date: .omitted, time: .shortened))."
         case .date:

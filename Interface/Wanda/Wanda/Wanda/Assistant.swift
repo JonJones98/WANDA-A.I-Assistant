@@ -24,8 +24,21 @@ final class Assistant {
         speech = SpeechRecognizer(microphone: microphone)
         wakeWord = WakeWordListener(microphone: microphone)
 
-        speech.onFinished = { [weak chat] text in chat?.sendDictation(text) }
+        speech.onFinished = { [weak self] text in
+            guard let self else { return }
+            // Drop "Hey Wanda," / "Wanda," / a nickname from the start of the request.
+            self.chat.sendDictation(self.wakeWord.phrase.strip(from: text))
+        }
         wakeWord.onWake = { [weak self] in self?.handleWake() }
+        wakeWord.requiresGreeting = { [weak chat] in chat?.voice.isSpeaking ?? false }
+
+        // After Wanda speaks, start a fresh transcript: her reply may have contained "Wanda".
+        chat.voice.$isSpeaking
+            .removeDuplicates()
+            .dropFirst()
+            .filter { !$0 }
+            .sink { [weak self] _ in self?.wakeWord.restartRecognition() }
+            .store(in: &subscriptions)
 
         // Dictation and the wake word listener share the mic: pause one while the other runs.
         speech.$isRecording
@@ -40,6 +53,11 @@ final class Assistant {
                 }
             }
             .store(in: &subscriptions)
+    }
+
+    /// Whether Wanda's window is on screen (enables calling her by name alone).
+    func setWindowVisible(_ visible: Bool) {
+        wakeWord.setWindowVisible(visible)
     }
 
     func start() {

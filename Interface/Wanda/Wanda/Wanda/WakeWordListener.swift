@@ -14,6 +14,8 @@ import Speech
 @MainActor
 final class WakeWordListener: ObservableObject {
     private static let enabledKey = "WandaWakeWordEnabled"
+    private static let nameOnlyKey = "WandaWakeNameOnlyWhenOpen"
+    private static let nicknameKey = "WandaWakeNickname"
 
     /// Incremented on every detection, so views can react with `onChange`.
     @Published private(set) var wakeCount = 0
@@ -23,11 +25,26 @@ final class WakeWordListener: ObservableObject {
     @Published var isEnabled: Bool {
         didSet {
             defaults.set(isEnabled, forKey: Self.enabledKey)
-            isEnabled ? resume() : pause()
+            isEnabled ? startIfAllowed() : stop()
         }
     }
 
+    /// With the window open, the bare name ("Wanda" or a nickname) is enough.
+    @Published var nameOnlyWhenOpen: Bool {
+        didSet { defaults.set(nameOnlyWhenOpen, forKey: Self.nameOnlyKey) }
+    }
+    /// Extra names Wanda answers to; several can be separated by commas.
+    @Published var nickname: String {
+        didSet { defaults.set(nickname, forKey: Self.nicknameKey) }
+    }
+
+    var phrase: WakePhrase { WakePhrase(nickname: nickname) }
+
     var onWake: (() -> Void)?
+    /// When true, the bare name isn't enough (e.g. while Wanda is speaking, so her own
+    /// "I'm Wanda" through the speakers can't wake her).
+    var requiresGreeting: () -> Bool = { false }
+    private(set) var isWindowVisible = false
 
     /// Recognition restarts this often so the transcript being searched stays short.
     private let restartInterval: Duration = .seconds(45)
@@ -45,19 +62,38 @@ final class WakeWordListener: ObservableObject {
         self.microphone = microphone
         self.defaults = defaults
         isEnabled = defaults.object(forKey: Self.enabledKey) as? Bool ?? true
+        nameOnlyWhenOpen = defaults.object(forKey: Self.nameOnlyKey) as? Bool ?? true
+        nickname = defaults.string(forKey: Self.nicknameKey) ?? ""
     }
 
-    /// Starts (or restarts) listening if enabled.
+    /// Starts (or restarts) listening if enabled, e.g. when dictation is done with the mic.
     func resume() {
         isPaused = false
-        guard isEnabled, !isListening else { return }
-        Task { await start() }
+        startIfAllowed()
     }
 
     /// Stops listening until `resume()`, e.g. while dictation is using the mic.
     func pause() {
         isPaused = true
         stop()
+    }
+
+    /// Name-only calling applies only while the window is on screen. Starts a fresh
+    /// transcript so a name said earlier doesn't count.
+    func setWindowVisible(_ visible: Bool) {
+        guard visible != isWindowVisible else { return }
+        isWindowVisible = visible
+        restartRecognition()
+    }
+
+    /// Forgets what was heard so far, e.g. after Wanda finishes speaking.
+    func restartRecognition() {
+        if isListening { beginRecognition() }
+    }
+
+    private func startIfAllowed() {
+        guard isEnabled, !isPaused, !isListening else { return }
+        Task { await start() }
     }
 
     private func start() async {
@@ -70,15 +106,19 @@ final class WakeWordListener: ObservableObject {
         let box = requestBox
         let token: Microphone.Token
         do {
-            token = try microphone.attach { buffer in box.request?.append(buffer) }
+            token = try await microphone.attach { buffer in box.request?.append(buffer) }
         } catch {
             problem = "No microphone is available, so Wanda can't hear “Hey Wanda”. Connect AirPods or a microphone; Wanda will pick it up automatically."
             // The mic may be disconnected or mid-switch (AirPods changing modes); retry.
             Task { [weak self] in
                 try? await Task.sleep(for: .seconds(2))
-                guard let self, !self.isPaused else { return }
-                self.resume()
+                self?.startIfAllowed()
             }
+            return
+        }
+        // Paused or disabled while the mic was starting.
+        guard isEnabled, !isPaused, !isListening else {
+            microphone.detach(token)
             return
         }
         micToken = token
@@ -97,7 +137,7 @@ final class WakeWordListener: ObservableObject {
 
         let request = SFSpeechAudioBufferRecognitionRequest()
         request.shouldReportPartialResults = true
-        request.contextualStrings = ["Wanda", "Hey Wanda", "Hi Wanda"]
+        request.contextualStrings = phrase.contextualStrings
         if recognizer.supportsOnDeviceRecognition {
             request.requiresOnDeviceRecognition = true
         }
@@ -113,7 +153,8 @@ final class WakeWordListener: ObservableObject {
                 let ended = failed || result?.isFinal == true
                 Task { @MainActor in
                     guard let self, self.session == currentSession, self.isListening else { return }
-                    if let text, WakePhrase.matches(text) {
+                    let nameOnly = self.nameOnlyWhenOpen && self.isWindowVisible && !self.requiresGreeting()
+                    if let text, self.phrase.matches(text, nameOnly: nameOnly) {
                         self.detected()
                     } else if ended {
                         // Keep listening; back off briefly after errors to avoid a tight loop.
@@ -166,21 +207,65 @@ private final class RequestBox: @unchecked Sendable {
     }
 }
 
-enum WakePhrase {
-    /// "Hey/Hi/Hello/OK Wanda", including common mishearings of "Wanda".
-    private static let pattern = #"\b(hey|hi|hay|hello|ok|okay)\s+(wanda|wander|wonda|juanda|rwanda)\b"#
+/// Decides whether speech is calling Wanda. "Hey/Hi/Hello/OK Wanda" (or a nickname)
+/// always counts. With `nameOnly` (the window is open), the bare name counts too.
+struct WakePhrase: Equatable {
+    private static let greetings = "hey|hi|hay|hello|ok|okay"
+    /// How the recognizer sometimes hears "Wanda"; trusted only after a greeting, since
+    /// words like "wander" are common on their own.
+    private static let wandaVariants = ["wanda", "wander", "wonda", "juanda", "rwanda"]
 
-    /// Removes a leading "Hey Wanda," from dictated text.
-    static func strip(from text: String) -> String {
-        text.replacingOccurrences(
-            of: #"^\s*(hey|hi|hay|hello|ok|okay)[\s,]+(wanda|wander|wonda|juanda)\b[\s,.!?]*"#,
+    static let standard = WakePhrase()
+
+    /// Extra names to answer to, lowercased (e.g. ["jarvis"]).
+    let nicknames: [String]
+
+    /// `nickname` may list several names separated by commas.
+    init(nickname: String = "") {
+        nicknames = nickname.lowercased()
+            .split(separator: ",")
+            .map { Self.normalize(String($0)) }
+            .filter { !$0.isEmpty && $0 != "wanda" }
+    }
+
+    /// Wanda plus the nicknames, as typed-case words for the speech recognizer's hints.
+    var contextualStrings: [String] {
+        (["wanda"] + nicknames).flatMap { name in
+            let title = name.capitalized
+            return [title, "Hey \(title)", "Hi \(title)"]
+        }
+    }
+
+    func matches(_ transcript: String, nameOnly: Bool = false) -> Bool {
+        let text = Self.normalize(transcript)
+        let greeted = #"\b(\#(Self.greetings))\s+(\#(Self.alternation(Self.wandaVariants + nicknames)))\b"#
+        if text.range(of: greeted, options: .regularExpression) != nil { return true }
+        guard nameOnly else { return false }
+        let bare = #"\b(\#(Self.alternation(["wanda"] + nicknames)))\b"#
+        return text.range(of: bare, options: .regularExpression) != nil
+    }
+
+    /// Removes a leading "Hey Wanda," or just "Wanda," (or a nickname) from dictated text.
+    func strip(from text: String) -> String {
+        let greeted = #"(?:\#(Self.greetings))[\s,]+(?:\#(Self.alternation(Self.wandaVariants + nicknames)))"#
+        let bare = #"(?:\#(Self.alternation(["wanda"] + nicknames)))"#
+        return text.replacingOccurrences(
+            of: #"^\s*(?:\#(greeted)|\#(bare))\b[\s,.!?]*"#,
             with: "", options: [.regularExpression, .caseInsensitive]
         )
     }
 
-    static func matches(_ transcript: String) -> Bool {
-        let normalized = transcript.lowercased()
-            .replacingOccurrences(of: #"[^a-z\s]"#, with: " ", options: .regularExpression)
-        return normalized.range(of: pattern, options: .regularExpression) != nil
+    static func matches(_ transcript: String) -> Bool { standard.matches(transcript) }
+    static func strip(from text: String) -> String { standard.strip(from: text) }
+
+    private static func normalize(_ text: String) -> String {
+        text.lowercased()
+            .replacingOccurrences(of: #"[^a-z0-9]+"#, with: " ", options: .regularExpression)
+            .trimmingCharacters(in: .whitespaces)
+    }
+
+    /// Names joined for a regex; multi-word names allow any spacing between words.
+    private static func alternation(_ names: [String]) -> String {
+        names.map { $0.replacingOccurrences(of: " ", with: #"\s+"#) }.joined(separator: "|")
     }
 }

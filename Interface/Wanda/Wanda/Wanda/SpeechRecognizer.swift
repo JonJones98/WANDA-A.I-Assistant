@@ -61,10 +61,17 @@ final class SpeechRecognizer: ObservableObject {
 
         let request = SFSpeechAudioBufferRecognitionRequest()
         request.shouldReportPartialResults = true
+        let startingSession = session
         do {
-            micToken = try microphone.attach { buffer in request.append(buffer) }
+            micToken = try await microphone.attach { buffer in request.append(buffer) }
         } catch {
             errorMessage = "Couldn't start the microphone: \(error.localizedDescription)"
+            return
+        }
+        // Cancelled while the mic was starting.
+        guard session == startingSession else {
+            microphone.detach(micToken)
+            micToken = nil
             return
         }
 

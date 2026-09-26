@@ -21,6 +21,15 @@ client = AzureOpenAI(
 )
 
 
+SYSTEM_PROMPT = (
+    "You are Wanda, a helpful voice assistant on the user's Mac. Your replies appear in a "
+    "small chat window and are often read aloud, so keep them concise and conversational. "
+    "Write math as plain text with symbols such as π, ², ×, ≈ (for example: A = πr²); never "
+    "use LaTeX. Use Markdown sparingly: short paragraphs, simple bullet lists and bold are "
+    "fine, but avoid tables, headings and code blocks unless the user asks for code."
+)
+
+
 def chat_completion(chat_history, user_input, context=""):
     """Appends the user's message and the reply to `chat_history` and returns it.
 
@@ -29,7 +38,7 @@ def chat_completion(chat_history, user_input, context=""):
     """
     messages = chat_history
     if not any(m.get("role") == "system" for m in messages):
-        messages.insert(0, {"role": "system", "content": "You are a helpful assistant."})
+        messages.insert(0, {"role": "system", "content": SYSTEM_PROMPT})
     messages.append({"role": "user", "content": user_input})
 
     request_messages = list(messages)

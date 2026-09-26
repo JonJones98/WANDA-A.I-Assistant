@@ -11,6 +11,7 @@ enum LocalIntent: Equatable {
         case play, pause, next, previous
     }
 
+    case tools
     case time
     case date
     case nowPlaying
@@ -32,6 +33,7 @@ enum LocalIntentParser {
         let s = normalize(text)
         guard !s.isEmpty else { return nil }
 
+        if matches(s, toolsPatterns) { return .tools }
         if matches(s, timePatterns) { return .time }
         if matches(s, datePatterns) { return .date }
         if matches(s, nowPlayingPatterns) { return .nowPlaying }
@@ -45,6 +47,14 @@ enum LocalIntentParser {
     // MARK: Phrasings
 
     private static let player = #"( on (spotify|apple music|music|itunes))?"#
+
+    private static let toolsPatterns = [
+        #"^(list|show)( me)?( all)?( of)?( your| the| my)?( built in)? (tool|tools|capabilities|commands|skills|features)$"#,
+        #"^(what|which) (tools|capabilities|commands|skills|features) (do you have|can you use|are there|are available)$"#,
+        #"^what are your (tools|capabilities|commands|skills|features)$"#,
+        #"^what can you do( without ai)?$"#,
+        #"^(tools|help)$"#,
+    ]
 
     private static let timePatterns = [
         #"^(what|what is) (the )?(current )?time( is it| it is)?$"#,

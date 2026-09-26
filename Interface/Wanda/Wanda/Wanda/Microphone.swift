@@ -4,6 +4,7 @@
 //
 
 import AVFoundation
+import CoreAudio
 
 /// The app's one connection to the microphone. The wake word listener and dictation take
 /// turns receiving its audio instead of each opening the device, which fails with
@@ -11,6 +12,11 @@ import AVFoundation
 ///
 /// Only the most recent `attach` receives audio. The engine keeps running briefly after
 /// the last `detach`, so handing the mic from one feature to the other doesn't restart it.
+///
+/// All audio engine calls run as plain main-queue work, never inside a Swift task: some
+/// of them (notably with no input device) let other queued work run in the middle of the
+/// call, and if that happens inside a task it corrupts Swift concurrency — afterwards
+/// every `await` in the app stops resuming and Wanda stops answering.
 @MainActor
 final class Microphone {
     typealias Consumer = (AVAudioPCMBuffer) -> Void
@@ -24,7 +30,7 @@ final class Microphone {
     private let box = ConsumerBox()
     private var currentToken: Token?
     private var nextID = 0
-    private var idleStop: Task<Void, Never>?
+    private var idleStop: DispatchWorkItem?
     private var configObserver: NSObjectProtocol?
     private var recentRestarts: [ContinuousClock.Instant] = []
 
@@ -39,13 +45,26 @@ final class Microphone {
         configObserver = NotificationCenter.default.addObserver(
             forName: .AVAudioEngineConfigurationChange, object: engine, queue: .main
         ) { [weak self] _ in
-            Task { @MainActor in self?.restartAfterConfigurationChange() }
+            DispatchQueue.main.async { self?.restartAfterConfigurationChange() }
         }
     }
 
     /// Sends microphone audio to `consumer` (replacing any previous consumer), starting
     /// the microphone if needed.
-    func attach(_ consumer: @escaping Consumer) throws -> Token {
+    func attach(_ consumer: @escaping Consumer) async throws -> Token {
+        try await withCheckedThrowingContinuation { continuation in
+            // Leave the current task before touching the audio engine (see type docs).
+            DispatchQueue.main.async {
+                do {
+                    continuation.resume(returning: try self.attachNow(consumer))
+                } catch {
+                    continuation.resume(throwing: error)
+                }
+            }
+        }
+    }
+
+    private func attachNow(_ consumer: @escaping Consumer) throws -> Token {
         idleStop?.cancel()
         idleStop = nil
         nextID += 1
@@ -71,11 +90,12 @@ final class Microphone {
         currentToken = nil
         box.consumer = nil
         idleStop?.cancel()
-        idleStop = Task { [weak self] in
-            try? await Task.sleep(for: .seconds(1))
-            guard !Task.isCancelled, let self, self.currentToken == nil else { return }
+        let stop = DispatchWorkItem { [weak self] in
+            guard let self, self.currentToken == nil else { return }
             self.stopEngine()
         }
+        idleStop = stop
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1, execute: stop)
     }
 
     struct NoInputDevice: LocalizedError {
@@ -83,6 +103,9 @@ final class Microphone {
     }
 
     private func startEngine() throws {
+        // Ask Core Audio first: with no microphone at all (e.g. AirPods disconnected on a
+        // Mac mini) there's no point creating audio engines every retry.
+        guard Self.hasInputDevice() else { throw NoInputDevice() }
         var format = engine.inputNode.outputFormat(forBus: 0)
         if !Self.isUsable(format) {
             // An engine made while no mic was connected can stay tied to that state; a new
@@ -108,6 +131,24 @@ final class Microphone {
             input.removeTap(onBus: 0)
             throw error
         }
+    }
+
+    /// True if the Mac's default input device exists and has input channels.
+    nonisolated static func hasInputDevice() -> Bool {
+        var address = AudioObjectPropertyAddress(
+            mSelector: kAudioHardwarePropertyDefaultInputDevice,
+            mScope: kAudioObjectPropertyScopeGlobal,
+            mElement: kAudioObjectPropertyElementMain
+        )
+        var device = AudioDeviceID(0)
+        var size = UInt32(MemoryLayout<AudioDeviceID>.size)
+        guard AudioObjectGetPropertyData(AudioObjectID(kAudioObjectSystemObject), &address, 0, nil, &size, &device) == noErr,
+              device != kAudioObjectUnknown else { return false }
+        address.mSelector = kAudioDevicePropertyStreams
+        address.mScope = kAudioDevicePropertyScopeInput
+        var streamsSize: UInt32 = 0
+        guard AudioObjectGetPropertyDataSize(device, &address, 0, nil, &streamsSize) == noErr else { return false }
+        return streamsSize > 0
     }
 
     private static func isUsable(_ format: AVAudioFormat) -> Bool {

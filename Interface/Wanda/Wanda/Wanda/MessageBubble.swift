@@ -14,7 +14,13 @@ struct MessageBubble: View {
         HStack {
             if isUser { Spacer(minLength: 60) }
             VStack(alignment: .leading, spacing: 3) {
-                Text(message.text)
+                Group {
+                    if message.sender == .wanda {
+                        Text(ReplyFormatter.display(message.text))
+                    } else {
+                        Text(message.text)
+                    }
+                }
                     .textSelection(.enabled)
                     .foregroundStyle(isUser ? Color.white : Color.primary)
                     .padding(.horizontal, 12)
@@ -28,6 +34,8 @@ struct MessageBubble: View {
                         .help("Answered locally, without using the AI")
                 }
             }
+            // Keep long messages readable when the window is wide.
+            .frame(maxWidth: 520, alignment: isUser ? .trailing : .leading)
             if !isUser { Spacer(minLength: 60) }
         }
     }
@@ -41,20 +49,28 @@ struct MessageBubble: View {
     }
 }
 
+/// Three dots that pulse in turn while Wanda is thinking.
+struct TypingDots: View {
+    var body: some View {
+        TimelineView(.periodic(from: .now, by: 0.35)) { context in
+            let active = Int(context.date.timeIntervalSinceReferenceDate / 0.35) % 3
+            HStack(spacing: 4) {
+                ForEach(0..<3, id: \.self) { dot in
+                    Circle()
+                        .fill(Color.secondary)
+                        .frame(width: 6, height: 6)
+                        .opacity(dot == active ? 1 : 0.35)
+                }
+            }
+        }
+        .accessibilityLabel("Wanda is typing")
+    }
+}
+
 struct TypingIndicator: View {
     var body: some View {
         HStack {
-            TimelineView(.periodic(from: .now, by: 0.35)) { context in
-                let active = Int(context.date.timeIntervalSinceReferenceDate / 0.35) % 3
-                HStack(spacing: 4) {
-                    ForEach(0..<3, id: \.self) { dot in
-                        Circle()
-                            .fill(Color.secondary)
-                            .frame(width: 6, height: 6)
-                            .opacity(dot == active ? 1 : 0.35)
-                    }
-                }
-            }
+            TypingDots()
             .padding(.horizontal, 14)
             .padding(.vertical, 12)
             .background(Color("WandaBubble"), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
