@@ -11,6 +11,8 @@ struct VoiceSettingsView: View {
     @Binding var wakeWordEnabled: Bool
     @Binding var nameOnlyWhenOpen: Bool
     @Binding var nickname: String
+    @ObservedObject var headGestures: HeadGestureListener
+    @Binding var showsDemoBar: Bool
     let onPreview: () -> Void
 
     @State private var showAllLanguages = false
@@ -25,13 +27,30 @@ struct VoiceSettingsView: View {
                 .font(.caption)
                 .foregroundStyle(.secondary)
 
-            Toggle("Listen for “Hey Wanda”", isOn: $wakeWordEnabled)
-            Text("Say “Hey Wanda” or “Hi Wanda”, wait for the chime, then ask. Listening happens on your Mac; the mic stays on while this is enabled.")
+            Toggle("Show the demo status bar", isOn: $showsDemoBar)
+            Text("Turn off to record the demo without it. Esc stops the demo.")
                 .font(.caption)
                 .foregroundStyle(.secondary)
-                .fixedSize(horizontal: false, vertical: true)
 
-            Group {
+            Toggle("Lower music while Wanda speaks", isOn: $settings.lowersMusic)
+            Text("Turns Spotify and Apple Music down during replies, then back up.")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+
+            Picker("Wake up with", selection: wakeMode) {
+                ForEach(WakeMode.allCases) { mode in
+                    Text(mode.label).tag(mode)
+                }
+            }
+            .pickerStyle(.menu)
+            .accessibilityIdentifier("wakeModePicker")
+
+            switch wakeMode.wrappedValue {
+            case .voice:
+                Text("Say “Hey Wanda” or “Hi Wanda”, wait for the chime, then ask. Listening happens on your Mac; the mic stays on, so AirPods play music in call quality.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
                 Toggle("Just say the name when the window is open", isOn: $nameOnlyWhenOpen)
                 HStack {
                     Text("Nickname")
@@ -43,8 +62,16 @@ struct VoiceSettingsView: View {
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
+            case .nod, .shake, .tilt, .anyGesture:
+                Text(gestureHint)
+                    .font(.caption)
+                    .foregroundStyle(headGestures.status == .denied || headGestures.status == .unsupported ? .orange : .secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            case .off:
+                Text("Wanda only listens when you click the mic button.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
             }
-            .disabled(!wakeWordEnabled)
 
             Divider()
 
@@ -85,6 +112,46 @@ struct VoiceSettingsView: View {
     }
 
     private var isKokoroSelected: Bool { settings.kokoroVoiceName != nil }
+
+    /// Wake up mode, stored as the "Hey Wanda" and head gesture settings.
+    private var wakeMode: Binding<WakeMode> {
+        Binding(
+            get: {
+                WakeMode(wakeWordEnabled: wakeWordEnabled,
+                         gesturesEnabled: headGestures.isEnabled,
+                         gesture: headGestures.gesture)
+            },
+            set: { mode in
+                wakeWordEnabled = mode == .voice
+                if let gesture = mode.gesture {
+                    headGestures.gesture = gesture
+                    headGestures.isEnabled = true
+                } else {
+                    headGestures.isEnabled = false
+                }
+            }
+        )
+    }
+
+    private var gestureHint: String {
+        let how: String
+        switch headGestures.gesture {
+        case .nod: how = "Nod twice (yes, yes)"
+        case .shake: how = "Shake your head (no, no)"
+        case .tilt: how = "Tilt your head to the side and back twice"
+        case .any: how = "Nod twice, shake your head, or tilt your head twice"
+        }
+        switch headGestures.status {
+        case .off, .ready:
+            return "\(how) with AirPods in to start or stop listening. Uses head tracking, not the mic, so music keeps its full quality. Experimental."
+        case .unsupported:
+            return "This Mac can't read head movement from AirPods (needs macOS 14 or later)."
+        case .denied:
+            return "Wanda can't read head movement. Allow Motion & Fitness for Wanda in System Settings → Privacy & Security."
+        case .waitingForAirPods:
+            return "Waiting for AirPods with head tracking (AirPods Pro, AirPods 3rd gen or later, AirPods Max)."
+        }
+    }
 
     private var nameHint: String {
         let names = (["Wanda"] + WakePhrase(nickname: nickname).nicknames.map(\.capitalized))

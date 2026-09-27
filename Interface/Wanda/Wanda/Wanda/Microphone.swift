@@ -158,6 +158,12 @@ final class Microphone {
     private func stopEngine() {
         engine.stop()
         engine.inputNode.removeTap(onBus: 0)
+        // A stopped engine still holds the input device open, which keeps Bluetooth
+        // headsets like AirPods in call mode (muffled music). Let go of it completely;
+        // a fresh engine doesn't touch the mic until it's started.
+        engine.reset()
+        engine = AVAudioEngine()
+        observeConfigurationChanges()
     }
 
     private func restartAfterConfigurationChange() {

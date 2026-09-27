@@ -140,6 +140,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
 
         // "Hey Wanda" brings the window forward and starts listening.
         assistant.onWake = { [weak self] in self?.showPanel() }
+        assistant.chat.showMinimalView = { [layout] minimal in layout.mode = minimal ? .minimal : .normal }
+        assistant.chat.isMinimalView = { [layout] in layout.mode == .minimal }
         assistant.start()
 
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
@@ -153,6 +155,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
 
     /// Quitting Wanda (power button, ⌘Q, or the Mac shutting down) stops the server too.
     func applicationWillTerminate(_ notification: Notification) {
+        assistant.musicDucker.restoreNow()
         server.stopServer()
     }
 

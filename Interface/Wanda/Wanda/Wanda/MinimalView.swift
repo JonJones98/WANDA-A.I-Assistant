@@ -19,6 +19,11 @@ struct MinimalView: View {
 
     private var messages: [ChatMessage] { chat.displayMessages }
 
+    /// What's being heard: real dictation, or the demo pretending to listen.
+    private var heard: String? {
+        speech.isRecording ? speech.transcript : chat.demo?.transcript
+    }
+
     private var lastRequest: String? {
         messages.last { $0.sender == .user }?.text
     }
@@ -31,11 +36,11 @@ struct MinimalView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            if speech.isRecording {
+            if let heard {
                 HStack(alignment: .firstTextBaseline, spacing: 6) {
                     Image(systemName: "waveform")
                         .foregroundStyle(.red)
-                    Text(speech.transcript.isEmpty ? "Listening…" : speech.transcript)
+                    Text(heard.isEmpty ? "Listening…" : heard)
                         .foregroundStyle(.primary.opacity(0.8))
                         .lineLimit(3)
                 }
@@ -55,7 +60,7 @@ struct MinimalView: View {
                 TypingDots()
                     .padding(.vertical, 4)
                     .frostedPill()
-            } else if !speech.isRecording, let lastReply {
+            } else if heard == nil, let lastReply {
                 Text(lastReply.sender == .wanda ? ReplyFormatter.display(lastReply.text) : AttributedString(lastReply.text))
                     .font(.title2.weight(.semibold))
                     .foregroundStyle(lastReply.sender == .error ? Color.red : Color.accentColor)
@@ -71,12 +76,15 @@ struct MinimalView: View {
         .padding(.leading, 12)
         .padding(.trailing, 60)   // room for the logo
         .padding(.top, 36)
-        .padding(.bottom, 12)
-        .frame(minHeight: 72, alignment: .top)
+        .padding(.bottom, 20)
+        .frame(minHeight: 80, alignment: .top)
         .overlay(alignment: .topLeading) {
             // Window-style controls: close always; mic and full view on hover.
             HStack(spacing: 6) {
                 iconButton("xmark", help: "Hide Wanda", action: onClose)
+                if chat.demo != nil, chat.showsDemoBar {
+                    iconButton("stop.fill", help: "Stop demo", action: chat.endDemo)
+                }
                 if isHovering || speech.isRecording {
                     iconButton(speech.isRecording ? "mic.fill" : "mic",
                                tint: speech.isRecording ? .red : nil,
@@ -90,7 +98,7 @@ struct MinimalView: View {
         }
         .overlay(alignment: .topTrailing) {
             // Logo that glows and moves with Wanda's voice.
-            WandaOrb(voice: chat.voice, isListening: speech.isRecording, size: 28, backed: true)
+            WandaOrb(voice: chat.voice, isListening: heard != nil, size: 28)
                 .padding(.top, 2)
                 .padding(.trailing, 4)
         }

@@ -37,6 +37,12 @@
 		74B0D03B2E6A000000000001 /* MinimalView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 74B0D03A2E6A000000000001 /* MinimalView.swift */; };
 		74B0D03D2E6A000000000001 /* ReplyFormatting.swift in Sources */ = {isa = PBXBuildFile; fileRef = 74B0D03C2E6A000000000001 /* ReplyFormatting.swift */; };
 		74B0D03F2E6A000000000001 /* WandaOrb.swift in Sources */ = {isa = PBXBuildFile; fileRef = 74B0D03E2E6A000000000001 /* WandaOrb.swift */; };
+		74B0D0412E6A000000000001 /* MusicDucker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 74B0D0402E6A000000000001 /* MusicDucker.swift */; };
+		74B0D0432E6A000000000001 /* HeadGestures.swift in Sources */ = {isa = PBXBuildFile; fileRef = 74B0D0422E6A000000000001 /* HeadGestures.swift */; };
+		74B0D0452E6A000000000001 /* Weather.swift in Sources */ = {isa = PBXBuildFile; fileRef = 74B0D0442E6A000000000001 /* Weather.swift */; };
+		74B0D0472E6A000000000001 /* Demo.swift in Sources */ = {isa = PBXBuildFile; fileRef = 74B0D0462E6A000000000001 /* Demo.swift */; };
+		74B0D0492E6A000000000001 /* WindowArranger.swift in Sources */ = {isa = PBXBuildFile; fileRef = 74B0D0482E6A000000000001 /* WindowArranger.swift */; };
+		74B0D04B2E6A000000000001 /* Documents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 74B0D04A2E6A000000000001 /* Documents.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -92,6 +98,12 @@
 		74B0D03A2E6A000000000001 /* MinimalView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MinimalView.swift; sourceTree = "<group>"; };
 		74B0D03C2E6A000000000001 /* ReplyFormatting.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReplyFormatting.swift; sourceTree = "<group>"; };
 		74B0D03E2E6A000000000001 /* WandaOrb.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WandaOrb.swift; sourceTree = "<group>"; };
+		74B0D0402E6A000000000001 /* MusicDucker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MusicDucker.swift; sourceTree = "<group>"; };
+		74B0D0422E6A000000000001 /* HeadGestures.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HeadGestures.swift; sourceTree = "<group>"; };
+		74B0D0442E6A000000000001 /* Weather.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Weather.swift; sourceTree = "<group>"; };
+		74B0D0462E6A000000000001 /* Demo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Demo.swift; sourceTree = "<group>"; };
+		74B0D0482E6A000000000001 /* WindowArranger.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WindowArranger.swift; sourceTree = "<group>"; };
+		74B0D04A2E6A000000000001 /* Documents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Documents.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -168,6 +180,12 @@
 				74B0D03A2E6A000000000001 /* MinimalView.swift */,
 				74B0D03C2E6A000000000001 /* ReplyFormatting.swift */,
 				74B0D03E2E6A000000000001 /* WandaOrb.swift */,
+				74B0D0402E6A000000000001 /* MusicDucker.swift */,
+				74B0D0422E6A000000000001 /* HeadGestures.swift */,
+				74B0D0442E6A000000000001 /* Weather.swift */,
+				74B0D0462E6A000000000001 /* Demo.swift */,
+				74B0D0482E6A000000000001 /* WindowArranger.swift */,
+				74B0D04A2E6A000000000001 /* Documents.swift */,
 				7408C1312D035A1600C82F6B /* Assets.xcassets */,
 				7408C1362D035A1600C82F6B /* Wanda.entitlements */,
 				7408C1332D035A1600C82F6B /* Preview Content */,
@@ -352,6 +370,12 @@
 				74B0D03B2E6A000000000001 /* MinimalView.swift in Sources */,
 				74B0D03D2E6A000000000001 /* ReplyFormatting.swift in Sources */,
 				74B0D03F2E6A000000000001 /* WandaOrb.swift in Sources */,
+				74B0D0412E6A000000000001 /* MusicDucker.swift in Sources */,
+				74B0D0432E6A000000000001 /* HeadGestures.swift in Sources */,
+				74B0D0452E6A000000000001 /* Weather.swift in Sources */,
+				74B0D0472E6A000000000001 /* Demo.swift in Sources */,
+				74B0D0492E6A000000000001 /* WindowArranger.swift in Sources */,
+				74B0D04B2E6A000000000001 /* Documents.swift in Sources */,
 				7489F4652D161D0B0050CD45 /* WandaVoice.swift in Sources */,
 				7408C1302D035A1300C82F6B /* ContentView.swift in Sources */,
 				7408C12E2D035A1300C82F6B /* WandaApp.swift in Sources */,

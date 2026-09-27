@@ -14,6 +14,7 @@ final class LocalAssistant {
     /// The last app the user was in other than Wanda (Wanda is in front while being asked).
     private(set) var lastActiveApp: NSRunningApplication?
     private var activationObserver: NSObjectProtocol?
+    private lazy var weather = WeatherService()
 
     init() {
         if let front = NSWorkspace.shared.frontmostApplication, front.bundleIdentifier != ownBundleID {
@@ -33,6 +34,12 @@ final class LocalAssistant {
     /// The answer if `text` is something Wanda can handle locally, otherwise nil.
     func answer(_ text: String) async -> String? {
         guard let intent = LocalIntentParser.parse(text) else { return nil }
+        // "Forecast for bitcoin" isn't a place: let the AI have it.
+        if case .weather(let query) = intent { return await weatherAnswer(query) }
+        // "Open Spotify and play jazz" isn't two apps: let the server and AI have it.
+        if case .openAndArrange(let names) = intent, names.contains(where: { WindowArranger.findApp($0) == nil }) {
+            return nil
+        }
         return await answer(intent)
     }
 
@@ -42,9 +49,15 @@ final class LocalAssistant {
         ("Time and date", "“what time is it”, “what’s today’s date”"),
         ("Music (Spotify or Apple Music)", "“what’s playing”, “pause”, “play”, “next song”, “previous song”"),
         ("Open and close apps", "“open Safari”, “close Spotify”"),
+        ("Open and arrange apps", "“open Safari, Notes and Spotify”, “arrange my windows”"),
         ("Apps in use", "“what app am I using”, “what apps are open”"),
+        ("Weather", "“what’s the weather”, “forecast for tomorrow”, “will it rain this week”, “weather in Chicago”"),
         ("Disk space", "“how much disk space do I have left”"),
         ("Volume", "“what’s the volume”, “set volume to 40”, “turn it up”, “mute”"),
+        ("Mini and full view", "“switch to mini view”, “full view”"),
+        ("Documents (the AI writes them)", "“write a packing list for a beach trip and save it”, “create a document about…”"),
+        ("Save an answer", "“save that to Documents”"),
+        ("Demo", "“start demo” plays a sample conversation"),
         ("This list", "“list tools”"),
     ]
 
@@ -86,6 +99,16 @@ final class LocalAssistant {
         case .mute(let muted):
             await SystemVolume.setMuted(muted)
             return muted ? "Muted." : "Unmuted."
+        case .weather(let query):
+            return await weatherAnswer(query) ?? "I couldn't find \(query.place ?? "that place")."
+        case .openAndArrange(let names):
+            return await openAndArrange(names)
+        case .arrangeWindows:
+            guard WindowArranger.isAllowed else { return accessibilityHint(opened: nil) }
+            let apps = WindowArranger.visibleApps()
+            guard !apps.isEmpty else { return "There are no windows to arrange." }
+            let count = WindowArranger.arrange(apps)
+            return count == 0 ? "I couldn't move those windows." : "Arranged \(count) window\(count == 1 ? "" : "s") to fit your screen."
         }
     }
 
@@ -142,6 +165,35 @@ final class LocalAssistant {
         }
     }
 
+    private func openAndArrange(_ names: [String]) async -> String {
+        let urls = names.compactMap(WindowArranger.findApp)
+        let apps = await WindowArranger.open(urls)
+        let appNames = ListFormatter.localizedString(byJoining: apps.compactMap(\.localizedName))
+        guard !apps.isEmpty else { return "I couldn't open those apps." }
+        guard WindowArranger.isAllowed else { return accessibilityHint(opened: appNames) }
+        let count = WindowArranger.arrange(apps)
+        let how = count == 2 ? "side by side" : "to fit your screen"
+        return count == 0 ? "Opened \(appNames), but I couldn't move their windows." : "Opened \(appNames) and arranged them \(how)."
+    }
+
+    /// Asks macOS to show the Accessibility prompt and explains what to do.
+    private func accessibilityHint(opened: String?) -> String {
+        WindowArranger.requestPermission()
+        let prefix = opened.map { "Opened \($0). " } ?? ""
+        return prefix + "To arrange windows, allow Wanda in System Settings → Privacy & Security → Accessibility, then say “arrange my windows”."
+    }
+
+    /// nil if the place named in the question couldn't be found.
+    private func weatherAnswer(_ query: WeatherQuery) async -> String? {
+        do {
+            return try await weather.answer(query)
+        } catch WeatherService.Failure.placeNotFound {
+            return nil
+        } catch {
+            return "I couldn't reach the weather service. Check your internet connection."
+        }
+    }
+
     private func openAppNames() -> [String] {
         NSWorkspace.shared.runningApplications
             .filter { $0.activationPolicy == .regular && $0.bundleIdentifier != ownBundleID }
@@ -150,12 +202,18 @@ final class LocalAssistant {
     }
 
     private func diskSpaceAnswer() -> String {
+        guard let disk = Self.diskUsage() else { return "I couldn't read the disk space." }
+        let format = { (bytes: Int64) in ByteCountFormatter.string(fromByteCount: bytes, countStyle: .file) }
+        return "You have \(format(disk.free)) free of \(format(disk.total))."
+    }
+
+    /// Free and total bytes on the startup disk.
+    static func diskUsage() -> (free: Int64, total: Int64)? {
         let keys: Set<URLResourceKey> = [.volumeAvailableCapacityForImportantUsageKey, .volumeTotalCapacityKey]
         guard let values = try? URL(fileURLWithPath: "/").resourceValues(forKeys: keys),
               let free = values.volumeAvailableCapacityForImportantUsage,
-              let total = values.volumeTotalCapacity else { return "I couldn't read the disk space." }
-        let format = { (bytes: Int64) in ByteCountFormatter.string(fromByteCount: bytes, countStyle: .file) }
-        return "You have \(format(free)) free of \(format(Int64(total)))."
+              let total = values.volumeTotalCapacity else { return nil }
+        return (free, Int64(total))
     }
 }
 
@@ -222,6 +280,19 @@ struct MediaPlayer {
         return await AppleScript.run("tell application \"\(name)\" to \(verb)").output != nil
     }
 
+    /// Starts music: resumes the current track, or if there isn't one, plays a relaxed
+    /// playlist in Spotify. Returns true if the player reports it's playing.
+    func startPlaying() async -> Bool {
+        guard await send(.play) else { return false }
+        try? await Task.sleep(for: .seconds(1))
+        if await nowPlaying()?.isPlaying == true { return true }
+        guard name == "Spotify" else { return false }
+        // Nothing queued: Spotify's "Peaceful Piano" playlist.
+        _ = await AppleScript.run(#"tell application "Spotify" to play track "spotify:playlist:37i9dQZF1DX4sWSpwq3LiO""#)
+        try? await Task.sleep(for: .seconds(1.5))
+        return await nowPlaying()?.isPlaying == true
+    }
+
     /// True if macOS blocked Wanda from controlling the player (Automation permission).
     static func lacksPermission(_ player: MediaPlayer) async -> Bool {
         await AppleScript.run("tell application \"\(player.name)\" to get player state").permissionDenied
@@ -270,7 +341,8 @@ enum AppleScript {
         }
     }
 
-    private static func runBlocking(_ source: String, timeout: TimeInterval) -> Result {
+    /// Like `run`, but waits on the calling thread. Only for when async isn't possible.
+    static func runBlocking(_ source: String, timeout: TimeInterval) -> Result {
         let process = Process()
         process.executableURL = URL(fileURLWithPath: "/usr/bin/osascript")
         process.arguments = ["-e", source]

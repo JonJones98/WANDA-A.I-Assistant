@@ -23,6 +23,25 @@ enum LocalIntent: Equatable {
     case setVolume(Int)
     case changeVolume(by: Int)
     case mute(Bool)
+    case weather(WeatherQuery)
+    /// Open several apps and fit their windows on screen.
+    case openAndArrange([String])
+    case arrangeWindows
+}
+
+/// A weather question: when, what about, and where (nil = where the Mac is).
+struct WeatherQuery: Equatable {
+    enum Day: Equatable {
+        case now, today, tomorrow, week
+    }
+
+    enum Focus: Equatable {
+        case general, temperature, rain, snow
+    }
+
+    var day: Day = .now
+    var focus: Focus = .general
+    var place: String?
 }
 
 /// Matches whole phrasings rather than keywords, so a question that only looks local
@@ -33,6 +52,10 @@ enum LocalIntentParser {
         let s = normalize(text)
         guard !s.isEmpty else { return nil }
 
+        // Before normalizing loses the commas between app names.
+        if let apps = appsToOpen(text) { return .openAndArrange(apps) }
+        if matches(s, arrangePatterns) { return .arrangeWindows }
+
         if matches(s, toolsPatterns) { return .tools }
         if matches(s, timePatterns) { return .time }
         if matches(s, datePatterns) { return .date }
@@ -41,10 +64,39 @@ enum LocalIntentParser {
         if matches(s, activeAppPatterns) { return .activeApp }
         if matches(s, openAppsPatterns) { return .openApps }
         if matches(s, diskPatterns) { return .diskSpace }
+        if let query = weatherQuery(s) { return .weather(query) }
         return volumeIntent(s)
     }
 
     // MARK: Phrasings
+
+    private static let arrangePatterns = [
+        #"^(organize|organise|arrange|tile|tidy( up)?|sort( out)?|clean up|fit|lay out|layout|split)( all)?( of)?( my| the)?( open)? (windows|apps|screen|desktop)( to fit)?( on (the|my) screen)?( side by side| in a grid)?$"#,
+        #"^(put|place|show) (my |the )?(windows|apps) side by side$"#,
+        #"^(make|help) (my |the )?(windows|apps) fit( on)?( the| my)? screen$"#,
+    ]
+
+    /// "Open Safari, Notes and Spotify (side by side)": two or more app names after
+    /// "open" or "launch". Works on the original text, whose commas separate names.
+    static func appsToOpen(_ text: String) -> [String]? {
+        var s = text.lowercased()
+            .replacingOccurrences(of: "&", with: " and ")
+            .replacingOccurrences(of: #"[.!?]+$"#, with: "", options: .regularExpression)
+        let lead = #"^\s*((hey|hi|ok|okay) )?(wanda[,!.]? *)?((please|can you|could you|would you) )?(open|launch|start up|start)( up)? "#
+        guard let range = s.range(of: lead, options: .regularExpression) else { return nil }
+        s.removeSubrange(range)
+        let trailing = #"( and)? (arrange|organize|organise|tile|fit|put|place|lay out) (them|the windows|their windows|it all|everything)( on (the|my) screen| side by side| in a grid)?$|,? (side by side|in a grid|next to each other|together|for me|please)$"#
+        var previous = ""
+        while previous != s {
+            previous = s
+            s = s.replacingOccurrences(of: trailing, with: "", options: .regularExpression)
+        }
+        let names = s.components(separatedBy: ",")
+            .flatMap { $0.components(separatedBy: " and ") }
+            .map { $0.trimmingCharacters(in: .whitespaces).replacingOccurrences(of: #"^and "#, with: "", options: .regularExpression) }
+            .filter { !$0.isEmpty }
+        return names.count >= 2 ? names : nil
+    }
 
     private static let player = #"( on (spotify|apple music|music|itunes))?"#
 
@@ -128,6 +180,51 @@ enum LocalIntentParser {
         return nil
     }
 
+    /// "what's the weather", "forecast for tomorrow in Paris", "will it rain this week",
+    /// "how cold is it outside", "do I need an umbrella". The day can be anywhere; a place
+    /// ("in Chicago") comes last.
+    static func weatherQuery(_ s: String) -> WeatherQuery? {
+        var query = WeatherQuery()
+        var s = " " + s + " "
+        let days: [(pattern: String, day: WeatherQuery.Day)] = [
+            (#" (for |on )?(the )?(rest of )?(this week|the week|next few days|coming days|week ahead|next 7 days|next seven days|week)( ahead)? "#, .week),
+            (#" (for |on )?tomorrow( morning| afternoon| evening| night)? "#, .tomorrow),
+            (#" (for |on )?(today|tonight|this (morning|afternoon|evening))( morning| afternoon| evening| night)? "#, .today),
+            (#" (right now|now|currently|at the moment|outside|out there|out|around here|here) "#, .now),
+        ]
+        for (pattern, day) in days {
+            guard let range = s.range(of: pattern, options: .regularExpression) else { continue }
+            s.replaceSubrange(range, with: " ")
+            if day != .now || query.day == .now { query.day = day }
+        }
+        s = s.replacingOccurrences(of: #"\s+"#, with: " ", options: .regularExpression)
+            .trimmingCharacters(in: .whitespaces)
+
+        let place = #"( (in|for|at|near) (?<place>[a-z][a-z ]*))?$"#
+        let forms: [(pattern: String, focus: WeatherQuery.Focus)] = [
+            (#"^((what|how) is |what will be |what does |how does |give me |get )?(the |today )?(weather|forecast|weather forecast|weather report|temperature|temp)( like| going to be| going to be like| gonna be| gonna be like| look| look like| looking| looking like| be like| be)?"#, .general),
+            (#"^how (hot|cold|warm|chilly) (is it|will it be|is it going to be|is it gonna be)"#, .temperature),
+            (#"^(is it|will it|is it going to|is it gonna|does it look like it will|does it look like it is going to|should i expect) (rain|be rainy|be raining|raining|storm|be stormy)"#, .rain),
+            (#"^do i need (an umbrella|a raincoat)"#, .rain),
+            (#"^(any |what is the )?(chance of rain|rain|rain forecast)"#, .rain),
+            (#"^(is it|will it|is it going to|is it gonna) (snow|be snowing|snowing|be snowy)"#, .snow),
+        ]
+        for (pattern, focus) in forms {
+            guard let regex = try? NSRegularExpression(pattern: pattern + place),
+                  let match = regex.firstMatch(in: s, range: NSRange(s.startIndex..., in: s)) else { continue }
+            query.focus = focus
+            if focus == .general, s.contains("temp") { query.focus = .temperature }
+            if let range = Range(match.range(withName: "place"), in: s) {
+                let name = String(s[range]).trimmingCharacters(in: .whitespaces)
+                if !["here", "my area", "my location", "my city", "town", "the area"].contains(name) {
+                    query.place = name
+                }
+            }
+            return query
+        }
+        return nil
+    }
+
     // MARK: Helpers
 
     /// Lowercases, expands contractions, drops punctuation, a leading wake phrase and
@@ -138,7 +235,7 @@ enum LocalIntentParser {
             .replacingOccurrences(of: "%", with: " percent")
         let contractions = [
             "what's": "what is", "whats": "what is", "it's": "it is", "i'm": "i am",
-            "today's": "today", "todays": "today", "who's": "who is", "that's": "that is",
+            "today's": "today", "todays": "today", "tomorrow's": "tomorrow", "how's": "how is", "who's": "who is", "that's": "that is",
         ]
         for (short, long) in contractions {
             s = s.replacingOccurrences(of: #"\b\#(short)\b"#, with: long, options: .regularExpression)

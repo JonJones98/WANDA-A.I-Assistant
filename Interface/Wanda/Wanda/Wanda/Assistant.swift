@@ -14,6 +14,8 @@ final class Assistant {
     let chat: ChatViewModel
     let speech: SpeechRecognizer
     let wakeWord: WakeWordListener
+    let musicDucker = MusicDucker()
+    let headGestures = HeadGestureListener()
     /// Called on "Hey Wanda" to bring the window forward.
     var onWake: (() -> Void)?
 
@@ -30,6 +32,9 @@ final class Assistant {
             self.chat.sendDictation(self.wakeWord.phrase.strip(from: text))
         }
         wakeWord.onWake = { [weak self] in self?.handleWake() }
+        headGestures.onGesture = { [weak self] in self?.handleHeadGesture() }
+        // One wake up mode at a time (see WakeMode); gestures win over older settings.
+        if headGestures.isEnabled { wakeWord.isEnabled = false }
         wakeWord.requiresGreeting = { [weak chat] in chat?.voice.isSpeaking ?? false }
 
         // After Wanda speaks, start a fresh transcript: her reply may have contained "Wanda".
@@ -38,6 +43,15 @@ final class Assistant {
             .dropFirst()
             .filter { !$0 }
             .sink { [weak self] _ in self?.wakeWord.restartRecognition() }
+            .store(in: &subscriptions)
+
+        // Turn background music down while Wanda speaks.
+        chat.voice.$isSpeaking
+            .removeDuplicates()
+            .sink { [weak self] speaking in self?.musicDucker.speakingChanged(speaking) }
+            .store(in: &subscriptions)
+        chat.voice.settings.$lowersMusic
+            .sink { [weak self] enabled in self?.musicDucker.isEnabled = enabled }
             .store(in: &subscriptions)
 
         // Dictation and the wake word listener share the mic: pause one while the other runs.
@@ -65,8 +79,18 @@ final class Assistant {
         wakeWord.resume()
     }
 
+    /// A nod or head shake starts listening, or stops it if Wanda is already listening.
+    private func handleHeadGesture() {
+        if speech.isRecording {
+            speech.stop()
+        } else {
+            handleWake()
+        }
+    }
+
     /// "Hey Wanda" was heard: show the window, stop any reply being read, chime, listen.
     private func handleWake() {
+        chat.endDemo()
         onWake?()
         chat.stopSpeaking()
         NSSound(named: "Tink")?.play()

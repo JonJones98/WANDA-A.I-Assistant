@@ -4,6 +4,12 @@
 <dict>
 	<key>NSAppleEventsUsageDescription</key>
 	<string>Wanda checks what's playing in Spotify or Music and can pause or skip songs when you ask.</string>
+	<key>NSLocationUsageDescription</key>
+	<string>Wanda uses your location for weather forecasts when you ask about the weather.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Wanda uses your location for weather forecasts when you ask about the weather.</string>
+	<key>NSMotionUsageDescription</key>
+	<string>Wanda reads your head movement from AirPods so you can nod twice to start talking.</string>
 	<key>WandaServerDirectory</key>
 	<string>$(PROJECT_DIR)/../../../server</string>
 </dict>

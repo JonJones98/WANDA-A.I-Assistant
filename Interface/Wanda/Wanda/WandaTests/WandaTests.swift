@@ -427,7 +427,7 @@ final class LocalIntentTests: XCTestCase {
         assertIntent(nil, [
             "What time is it in Tokyo?", "what time does the store close", "How long until Christmas?",
             "What does this song mean?", "Tell me about the artist of this song", "What are the lyrics to this song?",
-            "play despacito", "continue the story", "Who is this?", "What's the weather?",
+            "play despacito", "continue the story", "Who is this?",
             "explain what time dilation is", "open Safari",
         ])
     }
@@ -737,5 +737,321 @@ final class WakeListenerConcurrencyTests: XCTestCase {
         XCTAssertNotNil(answer)
         listener.pause()
         try await Task.sleep(for: .seconds(1.2))   // let the mic's idle stop run
+    }
+}
+
+final class HeadGestureDetectorTests: XCTestCase {
+    /// Feeds angles at 50 Hz and returns how many gestures were detected.
+    private func triggers(_ angles: [Double], _ detector: HeadGestureDetector = .nod) -> Int {
+        var detector = detector
+        return angles.enumerated().filter { detector.add($0.element, at: Double($0.offset) / 50) }.count
+    }
+
+    private func rest(_ seconds: Double, at angle: Double = 0) -> [Double] {
+        Array(repeating: angle, count: Int(seconds * 50))
+    }
+
+    /// Out to `size` radians and back over `seconds`.
+    private func swing(_ size: Double = -0.3, _ seconds: Double = 0.4) -> [Double] {
+        let count = Int(seconds * 50)
+        return (0..<count).map { size * sin(Double($0) / Double(count) * .pi) }
+    }
+
+    func testDoubleNodTriggers() {
+        XCTAssertEqual(triggers(rest(1) + swing() + rest(0.2) + swing() + rest(1)), 1)
+    }
+
+    func testSingleNodDoesNot() {
+        XCTAssertEqual(triggers(rest(1) + swing() + rest(2)), 0)
+    }
+
+    func testNodsFarApartDoNot() {
+        XCTAssertEqual(triggers(rest(1) + swing() + rest(2) + swing() + rest(1)), 0)
+    }
+
+    func testLookingDownAndBackDoesNot() {
+        // Look down at the keyboard for a few seconds, then back up, twice.
+        let lookDown = rest(1) + rest(3, at: -0.4) + rest(3)
+        XCTAssertEqual(triggers(lookDown + lookDown), 0)
+    }
+
+    func testSlowHeadMovementDoesNot() {
+        XCTAssertEqual(triggers(rest(1) + swing(-0.3, 1.5) + swing(-0.3, 1.5) + rest(1)), 0)
+    }
+
+    func testCooldownAfterTrigger() {
+        let double = swing() + rest(0.2) + swing()
+        XCTAssertEqual(triggers(rest(1) + double + rest(0.2) + double + rest(1)), 1)
+    }
+
+    func testShakeLeftThenRightTriggers() {
+        let shake = swing(0.4, 0.35) + swing(-0.4, 0.35)
+        XCTAssertEqual(triggers(rest(1) + shake + rest(1), .shake), 1)
+    }
+
+    func testTurningToAnotherScreenDoesNot() {
+        // Look at a second screen for a while, then back, twice.
+        let glance = rest(1) + rest(3, at: 0.6) + rest(3)
+        XCTAssertEqual(triggers(glance + glance, .shake), 0)
+    }
+
+    func testDoubleTiltTriggers() {
+        let tilt = swing(0.35, 0.5)
+        XCTAssertEqual(triggers(rest(1) + tilt + rest(0.2) + tilt + rest(1), .tilt), 1)
+    }
+
+    func testSavedEitherMeansAnyGesture() {
+        XCTAssertEqual(HeadGestureListener.Gesture(rawValue: "either"), .any)
+    }
+
+    func testSmallHeadMovementsDoNotShake() {
+        let fidget = swing(0.15, 0.3) + swing(-0.15, 0.3)
+        XCTAssertEqual(triggers(rest(1) + fidget + fidget + rest(1), .shake), 0)
+    }
+}
+
+final class WakeModeTests: XCTestCase {
+    func testModeFromSettings() {
+        XCTAssertEqual(WakeMode(wakeWordEnabled: true, gesturesEnabled: false, gesture: .nod), .voice)
+        XCTAssertEqual(WakeMode(wakeWordEnabled: false, gesturesEnabled: false, gesture: .nod), .off)
+        XCTAssertEqual(WakeMode(wakeWordEnabled: false, gesturesEnabled: true, gesture: .shake), .shake)
+        XCTAssertEqual(WakeMode(wakeWordEnabled: true, gesturesEnabled: true, gesture: .any), .anyGesture)
+    }
+
+    func testEveryModeRoundTrips() {
+        for mode in WakeMode.allCases {
+            let restored = WakeMode(wakeWordEnabled: mode == .voice,
+                                    gesturesEnabled: mode.gesture != nil,
+                                    gesture: mode.gesture ?? .any)
+            XCTAssertEqual(restored, mode)
+        }
+    }
+}
+
+final class WeatherTests: XCTestCase {
+    private func assertWeather(_ expected: WeatherQuery?, _ phrases: [String], file: StaticString = #filePath, line: UInt = #line) {
+        for phrase in phrases {
+            let intent = LocalIntentParser.parse(phrase)
+            XCTAssertEqual(intent, expected.map(LocalIntent.weather), "\"\(phrase)\"", file: file, line: line)
+        }
+    }
+
+    func testCurrentWeatherHere() {
+        assertWeather(WeatherQuery(), [
+            "What's the weather?", "Hey Wanda, what's the weather like outside", "weather",
+            "how's the weather right now", "what is the weather like", "weather forecast",
+        ])
+    }
+
+    func testDays() {
+        assertWeather(WeatherQuery(day: .today), ["what's the weather today", "today's weather", "forecast for today"])
+        assertWeather(WeatherQuery(day: .tomorrow), ["What's the weather going to be like tomorrow?", "forecast for tomorrow", "tomorrow's weather"])
+        assertWeather(WeatherQuery(day: .week), ["what's the forecast this week", "weather for the week", "what's the weather for the next few days"])
+    }
+
+    func testPlaces() {
+        assertWeather(WeatherQuery(place: "chicago"), ["what's the weather in Chicago", "Weather in Chicago?"])
+        assertWeather(WeatherQuery(day: .tomorrow, place: "new york"), [
+            "what's the weather tomorrow in New York", "What's the weather in New York tomorrow",
+        ])
+        assertWeather(WeatherQuery(), ["what's the weather here", "weather in my area"])
+    }
+
+    func testRainSnowAndTemperature() {
+        assertWeather(WeatherQuery(day: .tomorrow, focus: .rain), ["Will it rain tomorrow?", "is it going to rain tomorrow", "do I need an umbrella tomorrow"])
+        assertWeather(WeatherQuery(focus: .rain), ["is it going to rain", "chance of rain"])
+        assertWeather(WeatherQuery(day: .week, focus: .rain, place: "seattle"), ["will it rain this week in Seattle"])
+        assertWeather(WeatherQuery(day: .today, focus: .snow), ["is it going to snow today"])
+        assertWeather(WeatherQuery(focus: .temperature), ["what's the temperature outside", "how cold is it outside", "how hot is it"])
+    }
+
+    func testNotWeather() {
+        assertWeather(nil, ["what's the weather like on Mars in the book", "how does weather affect mood",
+                            "write a poem about rain", "what is the temperature of the sun"])
+    }
+
+    private let sample = """
+    {"current":{"temperature_2m":71.6,"apparent_temperature":75.2,"weather_code":2,"wind_speed_10m":8,"is_day":1},
+     "daily":{"time":["2026-09-26","2026-09-27","2026-09-28"],"weather_code":[2,61,0],
+              "temperature_2m_max":[78.4,70.1,80],"temperature_2m_min":[60.2,55,58],
+              "precipitation_probability_max":[10,80,null],"snowfall_sum":[0,0,0]}}
+    """
+
+    private func answer(_ query: WeatherQuery) throws -> String {
+        let forecast = try JSONDecoder().decode(Forecast.self, from: Data(sample.utf8))
+        return WeatherFormatter.answer(query, place: "Chicago", isHere: true, forecast: forecast)
+    }
+
+    func testAnswers() throws {
+        XCTAssertEqual(try answer(WeatherQuery()),
+                       "Right now in Chicago it's 72° and partly cloudy, feeling like 75°. Today: partly cloudy, high of 78°, low of 60°.")
+        XCTAssertEqual(try answer(WeatherQuery(day: .tomorrow)),
+                       "Tomorrow in Chicago: light rain, high of 70°, low of 55°, 80% chance of rain.")
+        XCTAssertEqual(try answer(WeatherQuery(day: .tomorrow, focus: .rain)),
+                       "Yes, probably. There's a 80% chance of rain tomorrow in Chicago.")
+        XCTAssertEqual(try answer(WeatherQuery(day: .week, focus: .rain)), "Rain is likely in Chicago tomorrow.")
+        XCTAssertTrue(try answer(WeatherQuery(day: .week)).hasPrefix("This week in Chicago:\nToday: partly cloudy, high 78°, low 60°\nTomorrow: light rain"))
+    }
+
+    func testDegreesAreSpoken() {
+        XCTAssertEqual(SpeechText.clean("It's 72° and sunny, high of 78°F."), "It's 72 degrees and sunny, high of 78 degrees.")
+    }
+}
+
+final class DemoTests: XCTestCase {
+    func testDemoRequests() {
+        for phrase in ["start demo", "Demo", "demo mode", "Hey Wanda, show me a demo", "run the demo please"] {
+            XCTAssertTrue(DemoScript.isRequest(phrase), phrase)
+        }
+        for phrase in ["demo of how photosynthesis works", "what is a demo", "start the music"] {
+            XCTAssertFalse(DemoScript.isRequest(phrase), phrase)
+        }
+    }
+
+    /// Steps answered on the Mac must really be local questions, or the demo would show a
+    /// fallback instead of a live answer.
+    func testLocalStepsAreLocalQuestions() {
+        for step in DemoScript.steps where step.reply == nil && step.action == nil {
+            XCTAssertNotNil(LocalIntentParser.parse(step.said), step.said)
+        }
+    }
+
+    /// The built-in apps the demo uses must be found by name.
+    func testDemoAppsAreFound() {
+        for name in ["Safari", "Maps", "TextEdit"] {
+            XCTAssertNotNil(WindowArranger.findApp(name), name)
+        }
+    }
+
+    /// Safari runs from a hidden system volume, so running apps must be matched by bundle
+    /// ID, not by the /Applications path (otherwise the demo never closed Safari).
+    func testAppsAreIdentifiedByBundleID() throws {
+        let safari = try XCTUnwrap(WindowArranger.findApp("Safari"))
+        XCTAssertEqual(Bundle(url: safari)?.bundleIdentifier, "com.apple.Safari")
+    }
+
+    func testTravelAnswerNamesTheTripDestination() {
+        let travel = DemoScript.steps.first { $0.said.contains("travel destination") }?.reply ?? ""
+        XCTAssertTrue(travel.contains("1. " + DemoScript.tripDestination), travel)
+    }
+
+    func testStorageAdviceDependsOnFreeSpace() {
+        let gb: Int64 = 1_000_000_000
+        let low = DemoScript.storageAdvice(free: 20 * gb, total: 500 * gb)
+        XCTAssertTrue(low.contains("about 4% of your disk"), low)
+        XCTAssertTrue(low.contains("very low"), low)
+        XCTAssertTrue(DemoScript.storageAdvice(free: 200 * gb, total: 500 * gb).contains("good shape"))
+    }
+}
+
+final class ViewCommandTests: XCTestCase {
+    func testViewCommands() {
+        for phrase in ["Switch to mini view", "Hey Wanda, switch to mini view.", "mini mode", "minimal view", "go to the compact view"] {
+            XCTAssertEqual(ViewCommand.parse(phrase), true, phrase)
+        }
+        for phrase in ["full view", "switch back to the full view", "normal mode", "show the chat window"] {
+            XCTAssertEqual(ViewCommand.parse(phrase), false, phrase)
+        }
+        for phrase in ["what is a mini cooper", "chat", "full", "tell me about the view from Everest"] {
+            XCTAssertNil(ViewCommand.parse(phrase), phrase)
+        }
+    }
+}
+
+final class WindowArrangerTests: XCTestCase {
+    func testOpenSeveralApps() {
+        XCTAssertEqual(LocalIntentParser.parse("Open Safari, Notes and Spotify"), .openAndArrange(["safari", "notes", "spotify"]))
+        XCTAssertEqual(LocalIntentParser.parse("Hey Wanda, open Safari and Notes side by side."), .openAndArrange(["safari", "notes"]))
+        XCTAssertEqual(LocalIntentParser.parse("launch visual studio code & terminal and arrange them"),
+                       .openAndArrange(["visual studio code", "terminal"]))
+        XCTAssertEqual(LocalIntentParser.parse("can you open mail, calendar, and the notes app"),
+                       .openAndArrange(["mail", "calendar", "the notes app"]))
+    }
+
+    func testOneAppIsNotArranged() {
+        XCTAssertNil(LocalIntentParser.appsToOpen("open Safari"))
+        XCTAssertNil(LocalIntentParser.appsToOpen("what apps are open"))
+    }
+
+    func testArrangePhrases() {
+        for phrase in ["arrange my windows", "Organize my windows", "tile the windows", "tidy up my screen",
+                       "put my windows side by side", "fit my windows on the screen", "make my windows fit the screen"] {
+            XCTAssertEqual(LocalIntentParser.parse(phrase), .arrangeWindows, phrase)
+        }
+        XCTAssertNil(LocalIntentParser.parse("how do I organize my closet"))
+    }
+
+    func testFindsInstalledApps() {
+        XCTAssertNotNil(WindowArranger.findApp("safari"))
+        XCTAssertNotNil(WindowArranger.findApp("the notes app"))
+        XCTAssertNotNil(WindowArranger.findApp("Settings"))
+        XCTAssertNil(WindowArranger.findApp("play jazz"))
+    }
+
+    func testLayouts() {
+        let screen = CGRect(x: 0, y: 0, width: 1000, height: 600)
+        let two = WindowArranger.layout(count: 2, in: screen, gap: 0)
+        XCTAssertEqual(two, [CGRect(x: 0, y: 0, width: 500, height: 600), CGRect(x: 500, y: 0, width: 500, height: 600)])
+
+        let three = WindowArranger.layout(count: 3, in: screen, gap: 0)
+        XCTAssertEqual(three[0], CGRect(x: 0, y: 0, width: 500, height: 600))
+        XCTAssertEqual(three[1], CGRect(x: 500, y: 300, width: 500, height: 300))   // top right
+        XCTAssertEqual(three[2], CGRect(x: 500, y: 0, width: 500, height: 300))     // bottom right
+
+        // 5 windows: 3 on top, 2 stretched across the bottom; nothing overlaps or leaves the screen.
+        let five = WindowArranger.layout(count: 5, in: screen, gap: 8)
+        XCTAssertEqual(five.count, 5)
+        XCTAssertEqual(five[3].width, five[4].width, accuracy: 0.01)
+        XCTAssertGreaterThan(five[3].width, five[0].width)
+        for (i, a) in five.enumerated() {
+            XCTAssertTrue(screen.contains(a), "\(a)")
+            for b in five[(i + 1)...] { XCTAssertFalse(a.intersects(b), "\(a) \(b)") }
+        }
+    }
+}
+
+final class DocumentTests: XCTestCase {
+    func testWriteRequests() {
+        for phrase in ["Create a 3-day itinerary for Tokyo and save it to Documents",
+                       "write a packing list for a beach trip and save it",
+                       "Hey Wanda, make a document about our meeting notes",
+                       "draft a cover letter and save it in my documents folder",
+                       "create a new file with my grocery list"] {
+            XCTAssertEqual(DocumentRequest.parse(phrase), .write(phrase), phrase)
+        }
+    }
+
+    func testSaveLastReply() {
+        for phrase in ["save that to Documents", "Save this", "save your last answer as a document", "save it to my documents"] {
+            XCTAssertEqual(DocumentRequest.parse(phrase), .saveLastReply, phrase)
+        }
+    }
+
+    func testOrdinaryRequestsAreNotDocuments() {
+        for phrase in ["write a poem about rain", "make me laugh", "create a workout plan",
+                       "how do I save money", "what's the weather"] {
+            XCTAssertNil(DocumentRequest.parse(phrase), phrase)
+        }
+    }
+
+    func testPlainText() {
+        let text = "# Tokyo Trip\n\n## Day 1\n- **Senso-ji** temple\n* [Guide](https://example.com)\nArea: \\(\\pi r^2\\)"
+        XCTAssertEqual(DocumentSaver.plainText(text),
+                       "Tokyo Trip\n\nDAY 1\n• Senso-ji temple\n• Guide (https://example.com)\nArea: πr²".replacingOccurrences(of: "Tokyo Trip", with: "TOKYO TRIP"))
+    }
+
+    func testTitlesAndFileNames() {
+        XCTAssertEqual(DocumentSaver.title(of: "Title: Beach Packing List\n• Sunscreen"), "Beach Packing List")
+        XCTAssertEqual(DocumentSaver.fileName("Q&A: Plans / Ideas?"), "Q&A- Plans - Ideas")
+    }
+
+    func testSaveNeverReplacesAFile() throws {
+        let folder = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: folder) }
+        let first = try DocumentSaver.save("Packing List\n• Hat", in: folder)
+        let second = try DocumentSaver.save("Packing List\n• Towel", in: folder)
+        XCTAssertEqual(first.url.lastPathComponent, "Packing List.txt")
+        XCTAssertEqual(second.url.lastPathComponent, "Packing List 2.txt")
+        XCTAssertEqual(try String(contentsOf: first.url), "Packing List\n• Hat\n")
     }
 }

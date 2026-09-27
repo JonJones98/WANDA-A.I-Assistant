@@ -1,13 +1,16 @@
 # Wanda — AI voice assistant for macOS
 
-Wanda is a menu bar assistant for the Mac. You talk to it (or type), and it answers out loud. Simple questions about your Mac — the time, what's playing on Spotify, the volume — are answered instantly on your Mac without using the AI. Everything else goes to an Azure OpenAI model through a small local Python server, which also generates Wanda's natural-sounding voice with [Kokoro](https://github.com/thewh1teagle/kokoro-onnx).
+Wanda is a menu bar assistant for the Mac. You talk to it (or type), and it answers out loud. Simple questions and tasks — the time, the weather, what's playing on Spotify, opening and arranging apps — are handled instantly on your Mac without using the AI. Everything else goes to an Azure OpenAI model through a small local Python server, which also generates Wanda's natural-sounding voice with [Kokoro](https://github.com/thewh1teagle/kokoro-onnx).
 
-- **Talk hands-free** — say "Hey Wanda", or just "Wanda" (or a nickname you choose) while its window is open.
-- **Answers on your Mac, no AI tokens** — time, date, Spotify/Apple Music, open apps, disk space, volume.
+- **Talk hands-free** — say "Hey Wanda", just "Wanda" (or a nickname) while its window is open, or nod / shake / tilt your head with AirPods.
+- **Answers on your Mac, no AI tokens** — time, date, weather, Spotify/Apple Music, open apps, disk space, volume.
+- **Does things on your Mac** — opens several apps and fits their windows on screen, and saves documents the AI writes to your Documents folder.
+- **Music-friendly** — Spotify and Apple Music are turned down while Wanda speaks, then back up.
 - **Natural voices** — Kokoro AI voices run locally on your Mac (default: Nova), with Apple voices as a fallback.
 - **Chat history** — saved on your Mac; open, rename or delete past chats from a sidebar.
 - **Two looks** — a full chat window, or a compact Siri-style card with an animated logo that glows as Wanda speaks.
 - **Takes care of its server** — the app starts the Python server when it launches and stops it when you quit.
+- **Demo mode** — plays a scripted conversation that shows it all off, ready for screen recordings.
 
 ---
 
@@ -35,7 +38,8 @@ Wanda is a menu bar assistant for the Mac. You talk to it (or type), and it answ
 ```mermaid
 flowchart LR
     You((You)) -- voice / text --> App["Wanda.app<br/>(SwiftUI, menu bar)"]
-    App -- "time, music, apps,<br/>volume, disk" --> Mac[(Your Mac)]
+    App -- "time, music, apps, windows,<br/>volume, disk, documents" --> Mac[(Your Mac)]
+    App -- forecasts --> Weather["Open-Meteo<br/>(free weather API)"]
     App -- "HTTP 127.0.0.1:8000" --> Server["Python server<br/>(FastAPI)"]
     Server -- chat --> Azure["Azure OpenAI<br/>(gpt-4.1)"]
     Server -- history --> Mongo[(MongoDB Atlas)]
@@ -44,11 +48,11 @@ flowchart LR
 
 | Part | Where | What it does |
 |---|---|---|
-| **Mac app** | [`Interface/Wanda/`](Interface/Wanda) | Menu bar app: chat window, voice input, wake word, on-Mac answers, voice output, chat history. Starts and stops the server. |
+| **Mac app** | [`Interface/Wanda/`](Interface/Wanda) | Menu bar app: chat window, voice input, wake word and head gestures, on-Mac answers and actions, voice output, chat history, demo mode. Starts and stops the server. |
 | **Server** | [`server/`](server) | FastAPI app on `127.0.0.1:8000`: AI chat (Azure OpenAI + MongoDB history), Kokoro text-to-speech, opening/closing apps. |
 | iOS app | [`Interface/Wanda_Mobile/`](Interface/Wanda_Mobile) | Early placeholder; not functional yet. |
 
-Speech recognition (your voice → text) uses Apple's built-in recognizer. The "Hey Wanda" listener runs **on-device**, so nothing you say is sent anywhere until you've called Wanda.
+Speech recognition (your voice → text) uses Apple's built-in recognizer. The "Hey Wanda" listener runs **on-device**, so nothing you say is sent anywhere until you've called Wanda. Weather comes from [Open-Meteo](https://open-meteo.com) (free, no account); only coordinates or a city name are sent.
 
 ---
 
@@ -62,6 +66,7 @@ Speech recognition (your voice → text) uses Apple's built-in recognizer. The "
 | **Azure OpenAI** | An Azure OpenAI resource with a chat model deployed (Wanda uses a deployment named `gpt-4.1`) and its API key. |
 | **MongoDB** | A MongoDB Atlas cluster (the free tier is fine) and its connection string. Stores the AI's conversation history. |
 | **Microphone** | For voice input. A Mac mini has no built-in mic — use AirPods, a headset or a USB mic. |
+| **AirPods (optional)** | For head gestures: AirPods Pro, AirPods (3rd generation or later) or AirPods Max, on macOS 14 or later. |
 | **Disk** | About 350 MB for the Kokoro voice model. |
 
 ---
@@ -129,6 +134,16 @@ Open <http://127.0.0.1:8000> — you should see `{"message":"Welcome to Wanda Vo
 
 Wanda appears as an icon in the **menu bar** (it has no Dock icon). Click it to open the window. The first time, macOS asks for **Microphone** and **Speech Recognition** access — allow both for voice features.
 
+Other features ask for permission the first time you use them:
+
+| Permission | Needed for |
+|---|---|
+| **Automation → Spotify / Music** | Now playing, music controls, lowering music while Wanda speaks |
+| **Accessibility** | Arranging app windows (System Settings → Privacy & Security → Accessibility → Wanda) |
+| **Location** | Weather "here" (without it, Wanda uses your time zone's city) |
+| **Motion & Fitness** | AirPods head gestures |
+| **Documents / Desktop folders** | Saving documents |
+
 Within a few seconds the dot next to "Wanda" in the header turns **green**: the server is running. Try typing `what time is it` (answered on your Mac) and then a general question (answered by the AI).
 
 ### 4. Install Wanda as a regular app (optional)
@@ -164,10 +179,15 @@ The window floats above other apps and appears on every desktop.
 |---|---|
 | **Wake word** | Say **"Hey Wanda"** (also "Hi / Hello / OK Wanda"), wait for the chime, then ask. |
 | **Just the name** | With the window open, simply say **"Wanda"** — or your nickname — to start listening. |
+| **Head gestures** *(experimental)* | With AirPods in, **nod twice**, **shake your head** or **tilt your head twice** to start or stop listening. |
 | **Mic button** | Click 🎤 in the message bar. Wanda sends your request when you pause. |
 | **Typing** | Type and press **Return**. |
 
 A red **Listening…** panel shows your words as you speak. Replies to spoken requests are read aloud; turn on **Read every reply aloud** in the voice panel to hear typed ones too. Saying "Hey Wanda" while Wanda is talking interrupts the reply.
+
+Choose how Wanda wakes up in the voice panel's **Wake up with** menu: "Hey Wanda", a head gesture, or the mic button only. Only one is active at a time. Head gestures use the AirPods' motion sensors, not the mic, so music stays at full quality until you actually talk (see [Troubleshooting](#troubleshooting)).
+
+While Wanda speaks, Spotify and Apple Music are turned down to 30% and faded back afterwards. If you change their volume in the meantime, your setting is kept.
 
 ### Answers on your Mac (no AI)
 
@@ -176,13 +196,30 @@ These are answered instantly on your Mac, marked **On your Mac**, and work even 
 | | Try saying |
 |---|---|
 | Time and date | "What time is it?" · "What's today's date?" |
+| Weather *(via Open-Meteo)* | "What's the weather?" · "Forecast for tomorrow" · "Will it rain this week in Seattle?" · "How cold is it outside?" |
 | Music (Spotify or Apple Music) | "What's playing?" · "Pause" · "Play" · "Next song" · "Previous song" |
 | Open and close apps | "Open Safari" · "Close Spotify" *(uses the server, not the AI)* |
+| Open and arrange apps | "Open Safari, Notes and Spotify" · "Arrange my windows" · "Put my windows side by side" |
 | Apps in use | "What app am I using?" · "What apps are open?" |
 | Disk space | "How much disk space do I have left?" |
 | Volume | "What's the volume?" · "Set volume to 40" · "Turn it up" · "Mute" |
+| Window view | "Switch to mini view" · "Full view" |
+| Save an answer | "Save that to Documents" |
+| Demo | "Start demo" |
 
 Wanda only answers locally when the whole question matches — "What time is it **in Tokyo**?" goes to the AI instead of getting the wrong local answer. Questions sent to the AI include a short note about your Mac (time, song playing, app in use), so follow-ups like "tell me about this artist" work. Music control never launches a player that isn't already open.
+
+Arranged windows go on the screen Wanda is on: 2 apps side by side, 3 as one large window with two stacked beside it, 4 or more in a grid. Everyday app names work ("chrome", "VS Code", "settings", "the Notes app"); if a name isn't an app ("open Spotify and play jazz"), the request goes to the AI instead.
+
+### Documents
+
+Ask Wanda to write something and save it, and the AI writes it, Wanda saves it as a text file in **Documents** and opens it in TextEdit:
+
+- "Create a 3-day itinerary for Tokyo and save it to Documents"
+- "Write a packing list for a beach trip and save it"
+- "Make a document summarizing our conversation"
+
+The file is named after the document's title and never replaces an existing file. **"Save that to Documents"** saves Wanda's last answer as it is, without calling the AI. Requests that don't mention saving or a document ("write a poem about rain") are answered in the chat as usual.
 
 ### Chat history
 
@@ -195,7 +232,17 @@ Click the **sidebar** button (far left of the header) to show your chats, groupe
 
 ### Minimal mode
 
-Click the **minimal view** button in the header for a compact, see-through card: your last request, Wanda's reply, and the Wanda logo, which glows and pulses as Wanda speaks. Hover for the mic and **full view** buttons. "Hey Wanda" opens straight into this card.
+Click the **minimal view** button in the header (or say "switch to mini view") for a compact, see-through card: your last request, Wanda's reply, and the Wanda logo, which glows and pulses on every word Wanda speaks. Hover for the mic and **full view** buttons. "Hey Wanda" opens straight into this card.
+
+### Demo mode
+
+Click **▶** in the header or say **"start demo"** to play a scripted conversation using Wanda's real voice, listening panel and animations. It switches to the mini view, opens Maps and Spotify and arranges them, plays music, answers the time and weather for real, plans a trip to Lisbon (Safari search, Maps pin, windows laid out, itinerary in TextEdit), tidies up the apps, saves the itinerary to your **Desktop**, then answers a storage question with your real disk numbers.
+
+- AI-style answers in the demo are pre-written, so it uses no tokens and works without the server.
+- Demo messages aren't saved to your chat history; when it ends, your previous chat and view come back and music it started is paused.
+- **Esc** or **Stop demo** ends it early; so do "Hey Wanda", typing, or opening another chat.
+- **Recording tip:** hide the demo bar with its 👁 button (or turn off **Show the demo status bar**), and start with Safari, Maps, TextEdit and Spotify closed — the demo quits them as part of the script.
+- Edit the script in [`Demo.swift`](Interface/Wanda/Wanda/Wanda/Demo.swift).
 
 ---
 
@@ -206,9 +253,11 @@ Open the **voice panel** with the speaker button in the header.
 | Setting | What it does |
 |---|---|
 | **Read every reply aloud** | Speak typed replies too (spoken requests are always answered aloud). |
-| **Listen for "Hey Wanda"** | The background wake word listener. The mic stays on while enabled. |
-| **Just say the name when the window is open** | With the window visible, "Wanda" or a nickname alone starts listening. |
-| **Nickname** | Extra names Wanda answers to, e.g. `Jarvis` (separate several with commas). |
+| **Show the demo status bar** | Turn off to record the demo without its bar. |
+| **Lower music while Wanda speaks** | Turn Spotify and Apple Music down during replies (on by default). |
+| **Wake up with** | Saying "Hey Wanda", nodding twice, shaking your head, tilting your head twice, any head gesture, or the mic button only. |
+| **Just say the name when the window is open** | ("Hey Wanda" mode) With the window visible, "Wanda" or a nickname alone starts listening. |
+| **Nickname** | ("Hey Wanda" mode) Extra names Wanda answers to, e.g. `Jarvis` (separate several with commas). |
 | **Voice** | Kokoro AI voices (★ = best; default **Nova**) or any installed Apple voice. |
 | **Speed / Pitch** | Speaking rate and pitch (pitch applies to Apple voices only). |
 | **Preview** | Hear the current voice. |
@@ -227,6 +276,7 @@ All settings, the window size and the view mode are remembered between launches.
 | API keys | `server/.env` (never committed) |
 | Voice model | `server/tts_models/` (never committed) |
 | AI conversation history | MongoDB `WandaDB.Chat_History` |
+| Documents Wanda writes | `~/Documents` (the demo's itinerary goes to `~/Desktop`) |
 
 ### Moving the server
 
@@ -253,7 +303,16 @@ Click the red dot to try again.
 No microphone is connected. Connect AirPods or a mic — Wanda picks it up automatically within a couple of seconds.
 
 **Music sounds muffled with AirPods.**
-While any app uses the AirPods mic, macOS switches them to low-quality headset mode. The "Hey Wanda" listener keeps the mic on, so music quality drops. Use a USB or wired mic, or turn off **Listen for "Hey Wanda"** while listening to music.
+While any app uses the AirPods mic, macOS switches them to low-quality call mode. The "Hey Wanda" listener keeps the mic on, so music quality drops. Set **Wake up with** to a head gesture (the mic then only turns on while you talk), use your Mac's built-in mic as the input (System Settings → Sound → Input), or use a wired mic. After you stop talking, Wanda releases the mic completely and the AirPods switch back within a couple of seconds.
+
+**Head gestures don't work.**
+The text under **Wake up with** says why: *Waiting for AirPods* means your AirPods don't support head tracking (or aren't in); *can't read head movement* means Motion access is off (System Settings → Privacy & Security → Motion & Fitness). If gestures trigger by accident, choose only one gesture.
+
+**Wanda opens apps but doesn't arrange them.**
+Allow Wanda in **System Settings → Privacy & Security → Accessibility**, then say "arrange my windows". If you rebuild with a different signing identity, remove and re-add Wanda there.
+
+**Weather is for the wrong place.**
+Allow Location for Wanda in **System Settings → Privacy & Security → Location Services**, or name the place: "weather in Chicago".
 
 **No Kokoro voices in the voice panel.**
 The server isn't running or the model files are missing from `server/tts_models/`. Wanda falls back to Apple voices.
@@ -286,7 +345,7 @@ uvicorn main:app --reload
 
 When you quit Wanda it stops the server, including one you started yourself — only `uvicorn` processes on port 8000 running from this `server` folder are touched.
 
-**Run the app's unit tests** (61 tests):
+**Run the app's unit tests** (99 tests):
 
 ```sh
 cd Interface/Wanda/Wanda
@@ -295,7 +354,9 @@ xcodebuild test -project Wanda.xcodeproj -scheme Wanda -destination 'platform=ma
 
 Or press **⌘U** in Xcode. Some tests start throwaway uvicorn servers on ports 8767–8773 using `server/wandaenv`, and skip themselves if it doesn't exist.
 
-**Code signing.** The app is not sandboxed (it needs to start the Python server and control other apps) and uses the hardened runtime with microphone and Apple Events entitlements.
+If Wanda is running from Xcode at the same time, command-line tests can fail with `CodeSign failed` because both builds share a folder. Add `-derivedDataPath /tmp/wanda-tests` to the command to build the tests separately.
+
+**Code signing.** The app is not sandboxed (it needs to start the Python server and control other apps) and uses the hardened runtime with microphone, Apple Events and location entitlements.
 
 **Security.** The server listens only on `127.0.0.1` and has **no authentication** — it can open and close apps on your Mac. Don't expose it on your network or the internet.
 
@@ -316,8 +377,14 @@ WANDA-A.I-Assistant/
 │   │   │   ├── ChatHistorySidebar.swift, ChatStore.swift   saved chats
 │   │   │   ├── ChatViewModel.swift   sending, replies, chat state
 │   │   │   ├── LocalIntent.swift, LocalAssistant.swift     on-Mac answers
+│   │   │   ├── Weather.swift         Open-Meteo forecasts
+│   │   │   ├── WindowArranger.swift  open apps, arrange windows (Accessibility)
+│   │   │   ├── Documents.swift       write and save documents
+│   │   │   ├── Demo.swift            demo script
 │   │   │   ├── CommandParser.swift   open / close app commands
 │   │   │   ├── WakeWordListener.swift, SpeechRecognizer.swift, Microphone.swift
+│   │   │   ├── HeadGestures.swift    AirPods nod / shake / tilt
+│   │   │   ├── MusicDucker.swift     lowers music while Wanda speaks
 │   │   │   ├── WandaVoice.swift, VoiceSettings*.swift, WandaOrb.swift
 │   │   │   ├── ReplyFormatting.swift Markdown/LaTeX for display and speech
 │   │   │   ├── ServerManager.swift   starts/stops the Python server

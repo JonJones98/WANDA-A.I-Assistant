@@ -12,9 +12,6 @@ struct WandaOrb: View {
     @ObservedObject var voice: WandaVoice
     let isListening: Bool
     var size: CGFloat = 30
-    /// Puts a frosted circle behind the logo so it stands out on any background; the
-    /// glow still shows around it.
-    var backed = false
 
     @State private var bounce: CGFloat = 0
 
@@ -36,13 +33,6 @@ struct WandaOrb: View {
                     .scaleEffect(1.1 + energy * 0.7 + bounce * 0.2)
                     .blur(radius: 5 + energy * 9)
                     .opacity(isActive ? 0.35 + energy * 0.6 : 0)
-                if backed {
-                    Circle()
-                        .fill(.regularMaterial)
-                        .overlay(Circle().strokeBorder(Color.primary.opacity(0.1), lineWidth: 0.5))
-                        .frame(width: size + 8, height: size + 8)
-                        .scaleEffect(1 + energy * 0.1 + bounce * 0.12)
-                }
                 Image("AppIcon")
                     .resizable()
                     .interpolation(.high)

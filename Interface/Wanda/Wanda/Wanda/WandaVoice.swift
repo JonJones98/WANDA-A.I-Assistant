@@ -193,6 +193,7 @@ enum SpeechText {
         let text = MathText.spoken(text)
         let rules: [(pattern: String, replacement: String)] = [
             (#"\[([^\]]+)\]\([^)]+\)"#, "$1"),          // [label](url) -> label
+            (#"\b(degrees) ?[FC]\b"#, "$1"),                // 72°F (already "72 degrees F") -> 72 degrees
             (#"```[A-Za-z]*"#, ""),                     // code fences
             (#"(?m)^[ \t]*(?:[-•*]|\d+\.)[ \t]+"#, ""),  // list bullets and numbers
             (#"[*`#>]+"#, ""),                          // emphasis, code, headings, quotes

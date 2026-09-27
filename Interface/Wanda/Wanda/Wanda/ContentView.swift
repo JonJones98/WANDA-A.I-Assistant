@@ -12,6 +12,7 @@ struct ContentView: View {
     @ObservedObject private var viewModel: ChatViewModel
     @ObservedObject private var speech: SpeechRecognizer
     @ObservedObject private var wakeWord: WakeWordListener
+    @ObservedObject private var headGestures: HeadGestureListener
     @ObservedObject private var layout: WindowLayout
     @State private var showsVoiceSettings = false
 
@@ -21,15 +22,27 @@ struct ContentView: View {
         viewModel = assistant.chat
         speech = assistant.speech
         wakeWord = assistant.wakeWord
+        headGestures = assistant.headGestures
         self.layout = layout
     }
 
     var body: some View {
-        switch layout.mode {
-        case .normal:
-            normalView
-        case .minimal:
-            minimalView
+        Group {
+            switch layout.mode {
+            case .normal:
+                normalView
+            case .minimal:
+                minimalView
+            }
+        }
+        .background {
+            // Esc stops the demo in either view, even with its bar hidden.
+            if viewModel.demo != nil {
+                Button("Stop demo", action: viewModel.endDemo)
+                    .keyboardShortcut(.cancelAction)
+                    .opacity(0)
+                    .accessibilityHidden(true)
+            }
         }
     }
 
@@ -59,9 +72,13 @@ struct ContentView: View {
         VStack(spacing: 0) {
             header
             Divider()
+            if let demo = viewModel.demo, viewModel.showsDemoBar {
+                DemoBanner(demo: demo, onReplay: viewModel.startDemo, onStop: viewModel.endDemo,
+                           onHide: { viewModel.showsDemoBar = false })
+            }
             messageList
-            if speech.isRecording {
-                ListeningPanel(transcript: speech.transcript)
+            if speech.isRecording || viewModel.demo?.transcript != nil {
+                ListeningPanel(transcript: viewModel.demo?.transcript ?? speech.transcript)
                     .padding(.horizontal, 10)
                     .padding(.top, 8)
             }
@@ -119,6 +136,8 @@ struct ContentView: View {
                     wakeWordEnabled: $wakeWord.isEnabled,
                     nameOnlyWhenOpen: $wakeWord.nameOnlyWhenOpen,
                     nickname: $wakeWord.nickname,
+                    headGestures: headGestures,
+                    showsDemoBar: $viewModel.showsDemoBar,
                     onPreview: viewModel.previewVoice
                 )
             }
@@ -140,6 +159,11 @@ struct ContentView: View {
                 Image(systemName: "square.and.pencil")
             }
             .help("New chat")
+            Button(action: viewModel.startDemo) {
+                Image(systemName: "play.circle")
+            }
+            .help("Play a demo conversation")
+            .accessibilityIdentifier("demoButton")
             Button {
                 NSApp.keyWindow?.orderOut(nil)
             } label: {
@@ -242,6 +266,39 @@ private struct MinimalHeightKey: PreferenceKey {
 }
 
 /// Shows what Wanda is hearing. Dictation sends itself on a pause or a second mic tap.
+/// Shown while the demo plays: progress, and a way out.
+private struct DemoBanner: View {
+    let demo: DemoState
+    let onReplay: () -> Void
+    let onStop: () -> Void
+    let onHide: () -> Void
+
+    var body: some View {
+        HStack(spacing: 8) {
+            Image(systemName: "play.rectangle.fill")
+                .foregroundStyle(Color.accentColor)
+            Text(demo.isFinished ? "Demo finished" : "Demo · \(demo.step) of \(demo.total)")
+                .font(.callout.weight(.medium))
+            Spacer()
+            if demo.isFinished {
+                Button("Replay", action: onReplay)
+            }
+            Button(demo.isFinished ? "Done" : "Stop demo", action: onStop)
+                .accessibilityIdentifier("stopDemoButton")
+            Button(action: onHide) {
+                Image(systemName: "eye.slash")
+            }
+            .buttonStyle(.borderless)
+            .help("Hide this bar for screen recordings (Esc still stops the demo; turn it back on in Voice settings)")
+            .accessibilityLabel("Hide demo bar")
+        }
+        .controlSize(.small)
+        .padding(.horizontal, 12)
+        .padding(.vertical, 6)
+        .background(Color.accentColor.opacity(0.1))
+    }
+}
+
 private struct ListeningPanel: View {
     let transcript: String
 
