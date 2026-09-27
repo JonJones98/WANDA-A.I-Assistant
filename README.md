@@ -84,21 +84,24 @@ Keep the folder where it is after building: the app finds the server by its loca
 
 ### 2. Set up the server
 
+Create the Python environment (the app expects it at `server/wandaenv`):
+
 ```sh
 cd server
-
-# Python environment (the app expects it at server/wandaenv)
 python3 -m venv wandaenv
 source wandaenv/bin/activate
-pip install -r requirements.txt
+python -m pip install -r requirements.txt
+```
 
-# Kokoro voice model, one time (~340 MB)
+Download the Kokoro voice model, one time (about 340 MB):
+
+```sh
 mkdir -p tts_models
 curl -L -o tts_models/kokoro-v1.0.onnx https://github.com/thewh1teagle/kokoro-onnx/releases/download/model-files-v1.0/kokoro-v1.0.onnx
 curl -L -o tts_models/voices-v1.0.bin  https://github.com/thewh1teagle/kokoro-onnx/releases/download/model-files-v1.0/voices-v1.0.bin
 ```
 
-**Keys and connection string.** Create `server/.env` (it's in `.gitignore`, so it's never committed):
+**Keys and connection string.** Create `server/.env` (it's in `.gitignore`, so it's never committed — on a second Mac, copy it over or create it again):
 
 ```env
 OPENAI_API_KEY=your-azure-openai-key
@@ -116,11 +119,13 @@ deployment = "gpt-4.1"   # the name of your chat model deployment
 
 **MongoDB.** In Atlas, allow your Mac's IP address under *Network Access* (or `0.0.0.0/0` while testing). Wanda creates a `WandaDB` database with `Chat_History`, `Users` and `Commands` collections automatically.
 
-**Check the server** (optional — the app starts it for you):
+**Check the server** (optional — the app starts it for you), from the `server` folder with `wandaenv` active:
 
 ```sh
-uvicorn main:app --reload
+python -m uvicorn main:app --reload
 ```
+
+Use `python -m uvicorn`, not plain `uvicorn`: if uvicorn is also installed outside the environment, plain `uvicorn` may run that copy, which fails with `ModuleNotFoundError: No module named 'pymongo'`.
 
 Open <http://127.0.0.1:8000> — you should see `{"message":"Welcome to Wanda Voice AI Assistant!"}`. Interactive API docs are at <http://127.0.0.1:8000/docs>. Stop it with `Ctrl+C`.
 
@@ -329,6 +334,12 @@ Allow Wanda in **System Settings → Privacy & Security → Microphone** and **S
 **`CLIENT ERROR: TUINSRemoteViewController…` in the Xcode console.**
 Harmless macOS log noise from the text-input system; ignore it (filter the console with `-TUINSRemoteViewController`).
 
+**`ModuleNotFoundError: No module named 'pymongo'` (or `fastapi`, `kokoro_onnx`) when starting the server by hand.**
+A copy of uvicorn outside `wandaenv` ran instead of the environment's. Start it with `python -m uvicorn main:app --reload` after `source wandaenv/bin/activate` (check `which python` points into `server/wandaenv`). The app itself always uses the environment's Python.
+
+**`zsh: unknown file attribute` when pasting commands.**
+zsh doesn't treat pasted `# …` lines as comments. It's harmless; the other commands still run.
+
 **Something else running on port 8000.**
 Wanda's server always uses `127.0.0.1:8000`. Stop the other program, or change the port in both `WandaAPIClient.defaultBaseURL` and how you start the server.
 
@@ -340,7 +351,7 @@ Wanda's server always uses `127.0.0.1:8000`. Stop the other program, or change t
 
 ```sh
 cd server && source wandaenv/bin/activate
-uvicorn main:app --reload
+python -m uvicorn main:app --reload
 ```
 
 When you quit Wanda it stops the server, including one you started yourself — only `uvicorn` processes on port 8000 running from this `server` folder are touched.
