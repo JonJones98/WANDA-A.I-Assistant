@@ -16,6 +16,10 @@ final class SpeechRecognizer: ObservableObject {
 
     /// Called once per dictation with the final, non-empty text.
     var onFinished: ((String) -> Void)?
+    /// Runs just before the mic turns on (e.g. pause music, play the chime). Things that
+    /// should be heard go here: turning the mic on switches AirPods to call mode, which
+    /// drops any sound playing at that moment.
+    var willStartListening: (() async -> Void)?
 
     private let silenceTimeout: Duration = .seconds(1.5)
     /// Gives up if nothing is heard at all after the mic turns on.
@@ -33,7 +37,7 @@ final class SpeechRecognizer: ObservableObject {
     /// Bumped whenever a dictation ends, so late callbacks from it are ignored.
     private var session = 0
     /// True from a successful start until the text is delivered or discarded.
-    private var isActive = false
+    @Published private(set) var isActive = false
 
     init(microphone: Microphone) {
         self.microphone = microphone
@@ -62,6 +66,8 @@ final class SpeechRecognizer: ObservableObject {
         let request = SFSpeechAudioBufferRecognitionRequest()
         request.shouldReportPartialResults = true
         let startingSession = session
+        await willStartListening?()
+        guard session == startingSession else { return }
         do {
             micToken = try await microphone.attach { buffer in request.append(buffer) }
         } catch {

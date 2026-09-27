@@ -192,7 +192,9 @@ A red **Listening…** panel shows your words as you speak. Replies to spoken re
 
 Choose how Wanda wakes up in the voice panel's **Wake up with** menu: "Hey Wanda", a head gesture, or the mic button only. Only one is active at a time. Head gestures use the AirPods' motion sensors, not the mic, so music stays at full quality until you actually talk (see [Troubleshooting](#troubleshooting)).
 
-While Wanda speaks, Spotify and Apple Music are turned down to 30% and faded back afterwards. If you change their volume in the meantime, your setting is kept.
+A chime (Tink) plays when Wanda starts listening, however it started, and a softer Pop when it stops.
+
+When you start talking, Spotify or Apple Music is paused and plays again about a second after Wanda finishes answering; if your request was about the music ("pause", "next song"), it's left as you asked. Music that plays during a reply is turned down to 30% and faded back afterwards; if you change its volume in the meantime, your setting is kept.
 
 ### Answers on your Mac (no AI)
 
@@ -259,6 +261,7 @@ Open the **voice panel** with the speaker button in the header.
 |---|---|
 | **Read every reply aloud** | Speak typed replies too (spoken requests are always answered aloud). |
 | **Show the demo status bar** | Turn off to record the demo without its bar. |
+| **Pause music while I talk to Wanda** | Pause Spotify and Apple Music while you talk, and play them again after the answer (on by default). |
 | **Lower music while Wanda speaks** | Turn Spotify and Apple Music down during replies (on by default). |
 | **Wake up with** | Saying "Hey Wanda", nodding twice, shaking your head, tilting your head twice, any head gesture, or the mic button only. |
 | **Just say the name when the window is open** | ("Hey Wanda" mode) With the window visible, "Wanda" or a nickname alone starts listening. |

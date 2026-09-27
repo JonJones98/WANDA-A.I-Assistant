@@ -32,6 +32,12 @@ struct VoiceSettingsView: View {
                 .font(.caption)
                 .foregroundStyle(.secondary)
 
+            Toggle("Pause music while I talk to Wanda", isOn: $settings.pausesMusic)
+            Text("Pauses Spotify and Apple Music when Wanda starts listening, and plays it again after her answer.")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+
             Toggle("Lower music while Wanda speaks", isOn: $settings.lowersMusic)
             Text("Turns Spotify and Apple Music down during replies, then back up.")
                 .font(.caption)

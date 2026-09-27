@@ -245,7 +245,7 @@ final class ChatViewModel: ObservableObject {
 
             // "Hey Wanda" (chime), then the question appears word by word as it's "heard".
             let spoken = (step.wakes ? "Hey Wanda, " : "") + step.said
-            if step.wakes { NSSound(named: "Tink")?.play() }
+            if step.wakes { Chime.listening() }
             demo?.transcript = ""
             guard await pause(0.4) else { return }
             var heard: [Substring] = []
@@ -256,6 +256,7 @@ final class ChatViewModel: ObservableObject {
             }
             guard await pause(0.5) else { return }
             demo?.transcript = nil
+            Chime.doneListening()
 
             // Wanda thinks, answers and reads the answer aloud.
             messages.append(ChatMessage(text: step.said, sender: .user))

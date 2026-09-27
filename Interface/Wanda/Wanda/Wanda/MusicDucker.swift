@@ -127,3 +127,34 @@ final class MusicDucker {
         """
     }
 }
+
+/// Pauses Spotify or Apple Music while the user talks to Wanda, and resumes it once Wanda
+/// has answered. If the request was itself about music ("pause", "next song"), the music
+/// is left as that request set it.
+@MainActor
+final class MusicPauser {
+    var isEnabled = true
+    /// The player this paused, if it's still waiting to be resumed.
+    private var pausedPlayer: MediaPlayer?
+
+    /// Pauses whichever player is playing. Returns quickly when none is open.
+    func pauseIfPlaying() async {
+        guard isEnabled, pausedPlayer == nil else { return }
+        for player in MediaPlayer.running() {
+            guard await player.nowPlaying()?.isPlaying == true else { continue }
+            if await player.send(.pause) { pausedPlayer = player }
+            return
+        }
+    }
+
+    func resumeIfPaused() {
+        guard let player = pausedPlayer else { return }
+        pausedPlayer = nil
+        Task { _ = await player.send(.play) }
+    }
+
+    /// The user controlled the music themselves; don't undo it.
+    func forget() {
+        pausedPlayer = nil
+    }
+}

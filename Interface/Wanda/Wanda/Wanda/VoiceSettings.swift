@@ -123,6 +123,7 @@ final class VoiceSettings: ObservableObject {
         static let rate = "WandaVoiceRate"
         static let pitch = "WandaVoicePitch"
         static let lowersMusic = "WandaLowersMusic"
+        static let pausesMusic = "WandaPausesMusicWhileListening"
     }
 
     /// nil until the first load finishes.
@@ -144,6 +145,10 @@ final class VoiceSettings: ObservableObject {
     @Published var lowersMusic: Bool {
         didSet { defaults.set(lowersMusic, forKey: Key.lowersMusic) }
     }
+    /// Pause Spotify and Apple Music while the user talks, until Wanda has answered.
+    @Published var pausesMusic: Bool {
+        didSet { defaults.set(pausesMusic, forKey: Key.pausesMusic) }
+    }
 
     private let api: WandaAPIClient
     private let defaults: UserDefaults
@@ -155,6 +160,7 @@ final class VoiceSettings: ObservableObject {
         rate = (defaults.object(forKey: Key.rate) as? Float) ?? AVSpeechUtteranceDefaultSpeechRate
         pitch = (defaults.object(forKey: Key.pitch) as? Float) ?? 1.0
         lowersMusic = (defaults.object(forKey: Key.lowersMusic) as? Bool) ?? true
+        pausesMusic = (defaults.object(forKey: Key.pausesMusic) as? Bool) ?? true
     }
 
     var selectedVoice: VoiceOption? {
