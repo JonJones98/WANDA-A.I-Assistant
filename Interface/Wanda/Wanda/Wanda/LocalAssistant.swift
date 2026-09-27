@@ -24,7 +24,7 @@ final class LocalAssistant {
             forName: NSWorkspace.didActivateApplicationNotification, object: nil, queue: .main
         ) { [weak self] notification in
             let app = notification.userInfo?[NSWorkspace.applicationUserInfoKey] as? NSRunningApplication
-            Task { @MainActor in
+            Task { @MainActor [weak self] in
                 guard let self, let app, app.bundleIdentifier != self.ownBundleID else { return }
                 self.lastActiveApp = app
             }

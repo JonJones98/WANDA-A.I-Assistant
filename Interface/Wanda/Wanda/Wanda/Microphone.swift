@@ -45,7 +45,7 @@ final class Microphone {
         configObserver = NotificationCenter.default.addObserver(
             forName: .AVAudioEngineConfigurationChange, object: engine, queue: .main
         ) { [weak self] _ in
-            DispatchQueue.main.async { self?.restartAfterConfigurationChange() }
+            DispatchQueue.main.async { [weak self] in self?.restartAfterConfigurationChange() }
         }
     }
 

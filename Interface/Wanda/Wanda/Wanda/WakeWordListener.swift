@@ -151,7 +151,7 @@ final class WakeWordListener: ObservableObject {
                 let text = result?.bestTranscription.formattedString
                 let failed = error != nil
                 let ended = failed || result?.isFinal == true
-                Task { @MainActor in
+                Task { @MainActor [weak self] in
                     guard let self, self.session == currentSession, self.isListening else { return }
                     let nameOnly = self.nameOnlyWhenOpen && self.isWindowVisible && !self.requiresGreeting()
                     if let text, self.phrase.matches(text, nameOnly: nameOnly) {

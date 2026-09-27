@@ -128,7 +128,7 @@ final class WandaVoice: NSObject, ObservableObject {
         armed = true
         guard speaking else { return }
         let timer = Timer(timeInterval: 1.0 / 30, repeats: true) { [weak self] _ in
-            Task { @MainActor in self?.updateLevel() }
+            Task { @MainActor [weak self] in self?.updateLevel() }
         }
         RunLoop.main.add(timer, forMode: .common)
         meterTimer = timer

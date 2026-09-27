@@ -84,7 +84,7 @@ final class SpeechRecognizer: ObservableObject {
         task = recognizer.recognitionTask(with: request) { [weak self] result, error in
             let text = result?.bestTranscription.formattedString
             let isFinal = error != nil || result?.isFinal == true
-            Task { @MainActor in
+            Task { @MainActor [weak self] in
                 guard let self, self.session == currentSession else { return }
                 if let text, !text.isEmpty {
                     self.transcript = text
