@@ -15,6 +15,7 @@ final class LocalAssistant {
     private(set) var lastActiveApp: NSRunningApplication?
     private var activationObserver: NSObjectProtocol?
     private lazy var weather = WeatherService()
+    private lazy var calendar = CalendarService()
 
     init() {
         if let front = NSWorkspace.shared.frontmostApplication, front.bundleIdentifier != ownBundleID {
@@ -51,6 +52,8 @@ final class LocalAssistant {
         ("Open and close apps", "“open Safari”, “close Spotify”"),
         ("Open and arrange apps", "“open Safari, Notes and Spotify”, “arrange my windows”"),
         ("Apps in use", "“what app am I using”, “what apps are open”"),
+        ("Morning routine", "“run my morning routine”, “good morning”"),
+        ("Calendar", "“do I have anything scheduled today”, “what’s on my calendar tomorrow”"),
         ("Weather", "“what’s the weather”, “forecast for tomorrow”, “will it rain this week”, “weather in Chicago”"),
         ("Disk space", "“how much disk space do I have left”"),
         ("Volume", "“what’s the volume”, “set volume to 40”, “turn it up”, “mute”"),
@@ -101,6 +104,13 @@ final class LocalAssistant {
             return muted ? "Muted." : "Unmuted."
         case .weather(let query):
             return await weatherAnswer(query) ?? "I couldn't find \(query.place ?? "that place")."
+        case .morningRoutine:
+            return await morningRoutine()
+        case .schedule(let tomorrow):
+            let day = tomorrow ? "tomorrow" : "today"
+            let date = tomorrow ? Calendar.current.date(byAdding: .day, value: 1, to: Date())! : Date()
+            guard let items = try? await calendar.events(on: date) else { return CalendarService.permissionHint }
+            return CalendarService.summary(items, day: day)
         case .openAndArrange(let names):
             return await openAndArrange(names)
         case .arrangeWindows:
@@ -181,6 +191,41 @@ final class LocalAssistant {
         WindowArranger.requestPermission()
         let prefix = opened.map { "Opened \($0). " } ?? ""
         return prefix + "To arrange windows, allow Wanda in System Settings → Privacy & Security → Accessibility, then say “arrange my windows”."
+    }
+
+    /// Today's calendar, the weather, reminders due and a recap of yesterday, one line each.
+    /// - Parameter reminders: reminders to read out instead of the real ones (the demo).
+    func morningRoutine(reminders: [String]? = nil) async -> String {
+        var lines = ["Good morning! Here's your day."]
+        if let today = try? await calendar.events(on: Date()) {
+            lines.append(CalendarService.summary(today, day: "today"))
+        } else {
+            lines.append(CalendarService.permissionHint)
+        }
+        lines.append(await weatherAnswer(WeatherQuery(day: .today)) ?? "I couldn't get the weather.")
+        var due = reminders
+        if due == nil { due = try? await calendar.remindersDue() }
+        if let due {
+            lines.append(due.isEmpty
+                ? "No reminders are due today."
+                : "Reminders due: \(ListFormatter.localizedString(byJoining: Array(due.prefix(5))))\(due.count > 5 ? ", and \(due.count - 5) more" : "").")
+        }
+        let yesterday = Calendar.current.date(byAdding: .day, value: -1, to: Date())!
+        let events = (try? await calendar.events(on: yesterday))?.map(\.title) ?? []
+        let completed = (try? await calendar.remindersCompletedYesterday()) ?? []
+        lines.append(Self.yesterdayRecap(events: events, completed: completed))
+        return lines.joined(separator: "\n")
+    }
+
+    /// "Yesterday you had Standup and Dentist, and finished 2 reminders."
+    nonisolated static func yesterdayRecap(events: [String], completed: [String]) -> String {
+        let had = events.isEmpty ? nil : "had \(ListFormatter.localizedString(byJoining: Array(events.prefix(3))))"
+            + (events.count > 3 ? " and \(events.count - 3) more" : "")
+        let finished = completed.isEmpty ? nil
+            : "finished \(completed.count == 1 ? "one reminder" : "\(completed.count) reminders")"
+        let parts = [had, finished].compactMap { $0 }
+        guard !parts.isEmpty else { return "Yesterday was quiet: nothing on your calendar." }
+        return "Yesterday you " + parts.joined(separator: ", and ") + "."
     }
 
     /// nil if the place named in the question couldn't be found.

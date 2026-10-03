@@ -43,6 +43,7 @@
 		74B0D0472E6A000000000001 /* Demo.swift in Sources */ = {isa = PBXBuildFile; fileRef = 74B0D0462E6A000000000001 /* Demo.swift */; };
 		74B0D0492E6A000000000001 /* WindowArranger.swift in Sources */ = {isa = PBXBuildFile; fileRef = 74B0D0482E6A000000000001 /* WindowArranger.swift */; };
 		74B0D04B2E6A000000000001 /* Documents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 74B0D04A2E6A000000000001 /* Documents.swift */; };
+		74B0D04D2E6A000000000001 /* Calendar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 74B0D04C2E6A000000000001 /* Calendar.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -104,6 +105,7 @@
 		74B0D0462E6A000000000001 /* Demo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Demo.swift; sourceTree = "<group>"; };
 		74B0D0482E6A000000000001 /* WindowArranger.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WindowArranger.swift; sourceTree = "<group>"; };
 		74B0D04A2E6A000000000001 /* Documents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Documents.swift; sourceTree = "<group>"; };
+		74B0D04C2E6A000000000001 /* Calendar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Calendar.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -186,6 +188,7 @@
 				74B0D0462E6A000000000001 /* Demo.swift */,
 				74B0D0482E6A000000000001 /* WindowArranger.swift */,
 				74B0D04A2E6A000000000001 /* Documents.swift */,
+				74B0D04C2E6A000000000001 /* Calendar.swift */,
 				7408C1312D035A1600C82F6B /* Assets.xcassets */,
 				7408C1362D035A1600C82F6B /* Wanda.entitlements */,
 				7408C1332D035A1600C82F6B /* Preview Content */,
@@ -376,6 +379,7 @@
 				74B0D0472E6A000000000001 /* Demo.swift in Sources */,
 				74B0D0492E6A000000000001 /* WindowArranger.swift in Sources */,
 				74B0D04B2E6A000000000001 /* Documents.swift in Sources */,
+				74B0D04D2E6A000000000001 /* Calendar.swift in Sources */,
 				7489F4652D161D0B0050CD45 /* WandaVoice.swift in Sources */,
 				7408C1302D035A1300C82F6B /* ContentView.swift in Sources */,
 				7408C12E2D035A1300C82F6B /* WandaApp.swift in Sources */,

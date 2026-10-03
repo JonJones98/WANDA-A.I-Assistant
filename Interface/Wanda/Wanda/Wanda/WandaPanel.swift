@@ -12,8 +12,12 @@ final class WandaPanel: NSPanel {
     private static let autosaveName = "WandaPanel"
     /// Glass opacity in minimal mode; lower is more see-through.
     private static let minimalGlassOpacity: CGFloat = 0.5
+    /// Gap between the mini view and the screen's top-right corner.
+    private static let cornerMargin: CGFloat = 12
 
     private let glass = NSVisualEffectView()
+    /// The mode last applied, to spot a switch into the mini view.
+    private var appliedMode: WindowLayout.Mode?
 
     init<Content: View>(rootView: Content) {
         super.init(
@@ -86,7 +90,14 @@ final class WandaPanel: NSPanel {
 
         var target = frameRect(forContentRect: NSRect(origin: .zero, size: layout.contentSize))
         target.origin = NSPoint(x: frame.minX, y: frame.maxY - target.height)
-        if let visible = (screen ?? NSScreen.main)?.visibleFrame {
+        let visible = (screen ?? NSScreen.main)?.visibleFrame
+        // Switching to the mini view tucks it into the top-right corner of the screen.
+        if layout.mode == .minimal, appliedMode == .normal, let visible {
+            target.origin = NSPoint(x: visible.maxX - Self.cornerMargin - target.width,
+                                    y: visible.maxY - Self.cornerMargin - target.height)
+        }
+        appliedMode = layout.mode
+        if let visible {
             target.size.width = min(target.width, visible.width)
             target.size.height = min(target.height, visible.height)
             target.origin.x = min(max(target.minX, visible.minX), visible.maxX - target.width)

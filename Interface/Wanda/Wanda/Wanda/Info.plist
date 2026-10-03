@@ -4,6 +4,14 @@
 <dict>
 	<key>NSAppleEventsUsageDescription</key>
 	<string>Wanda checks what's playing in Spotify or Music and can pause or skip songs when you ask.</string>
+	<key>NSCalendarsUsageDescription</key>
+	<string>Wanda tells you what's on your calendar and adds events when you ask.</string>
+	<key>NSCalendarsFullAccessUsageDescription</key>
+	<string>Wanda tells you what's on your calendar and adds events when you ask.</string>
+	<key>NSRemindersUsageDescription</key>
+	<string>Wanda reads out your reminders in your morning routine.</string>
+	<key>NSRemindersFullAccessUsageDescription</key>
+	<string>Wanda reads out your reminders in your morning routine.</string>
 	<key>NSLocationUsageDescription</key>
 	<string>Wanda uses your location for weather forecasts when you ask about the weather.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>

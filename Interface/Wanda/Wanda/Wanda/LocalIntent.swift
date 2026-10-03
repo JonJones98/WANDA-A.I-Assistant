@@ -24,6 +24,10 @@ enum LocalIntent: Equatable {
     case changeVolume(by: Int)
     case mute(Bool)
     case weather(WeatherQuery)
+    /// What's on the calendar today (or tomorrow).
+    case schedule(tomorrow: Bool)
+    /// Calendar, weather, reminders and a recap of yesterday.
+    case morningRoutine
     /// Open several apps and fit their windows on screen.
     case openAndArrange([String])
     case arrangeWindows
@@ -65,10 +69,29 @@ enum LocalIntentParser {
         if matches(s, openAppsPatterns) { return .openApps }
         if matches(s, diskPatterns) { return .diskSpace }
         if let query = weatherQuery(s) { return .weather(query) }
+        if matches(s, morningPatterns) { return .morningRoutine }
+        if matches(s, schedulePatterns) { return .schedule(tomorrow: s.hasSuffix("tomorrow")) }
         return volumeIntent(s)
     }
 
     // MARK: Phrasings
+
+    private static let morningPatterns = [
+        #"^(run|start|do|play)( my| the)? morning (routine|briefing|brief|rundown)$"#,
+        #"^(my )?morning (routine|briefing|brief|rundown)$"#,
+        #"^good morning( wanda)?$"#,
+        #"^(brief me|start my day|how does my day look|what is my day like)$"#,
+    ]
+
+    private static let schedulePatterns = [
+        #"^(do|will) i have (anything|something|any (events|meetings|plans|appointments))( scheduled| planned| on| going on)?( for)? (today|tomorrow)$"#,
+        #"^(is there|have i got) (anything|something) (scheduled|planned|on)( for)? (today|tomorrow)$"#,
+        #"^what (is|do i have) (on|scheduled|planned)( on)?( for)?( my)?( calendar| schedule| agenda)?( for)?( today| tomorrow)?$"#,
+        #"^what (is|does) (my|the) (calendar|schedule|agenda|day)( look like)?( for)?( today| tomorrow)?$"#,
+        #"^what (meetings|events|appointments|plans) do i have( today| tomorrow)?$"#,
+        #"^what do i have( going on| planned| on)?( for)? (today|tomorrow)$"#,
+        #"^(check |show me |read )?(my )?(calendar|schedule|agenda)( for)?( today| tomorrow)?$"#,
+    ]
 
     private static let arrangePatterns = [
         #"^(organize|organise|arrange|tile|tidy( up)?|sort( out)?|clean up|fit|lay out|layout|split)( all)?( of)?( my| the)?( open)? (windows|apps|screen|desktop)( to fit)?( on (the|my) screen)?( side by side| in a grid)?$"#,

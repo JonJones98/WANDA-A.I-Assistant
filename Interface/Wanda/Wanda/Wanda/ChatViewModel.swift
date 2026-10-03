@@ -4,6 +4,7 @@
 //
 
 import AppKit
+import Combine
 
 @MainActor
 final class ChatViewModel: ObservableObject {
@@ -21,6 +22,8 @@ final class ChatViewModel: ObservableObject {
     @Published var draft = ""
     /// The chat waiting for a reply, if any. One request runs at a time.
     @Published private(set) var pendingConversationID: UUID?
+    /// The reply being read aloud right now, if any (its bubble glows while Wanda talks).
+    @Published private(set) var spokenMessageID: UUID?
     /// Read every reply aloud, not just replies to dictated messages.
     @Published var readRepliesAloud: Bool {
         didSet {
@@ -50,9 +53,13 @@ final class ChatViewModel: ObservableObject {
     /// Apps the demo opened (for arranging), the music player among them, and whether the
     /// demo started the music (paused when the demo ends).
     private var demoApps: [NSRunningApplication] = []
+    /// The movie showing the demo picked, for the calendar event step.
+    private var demoShowing: Date?
+    private lazy var calendar = CalendarService()
     private var demoPlayer: MediaPlayer?
     private var demoStartedMusic = false
     private var wasMinimalBeforeDemo = false
+    private var speakingObserver: AnyCancellable?
 
     /// Switches the window between the mini (true) and full (false) views.
     var showMinimalView: ((Bool) -> Void)?
@@ -85,6 +92,15 @@ final class ChatViewModel: ObservableObject {
         self.showsDemoBar = defaults.object(forKey: Self.showsDemoBarKey) as? Bool ?? true
         self.voiceSettings = VoiceSettings(api: api, defaults: defaults)
         self.voice = WandaVoice(settings: voiceSettings, api: api)
+        speakingObserver = voice.$isSpeaking
+            .filter { !$0 }
+            .sink { [weak self] _ in self?.spokenMessageID = nil }
+    }
+
+    /// Reads `message` aloud (or `text` in its place) and marks it as the one being spoken.
+    private func speak(_ message: ChatMessage, saying text: String? = nil) {
+        voice.speak(text ?? message.text)
+        if voice.isSpeaking { spokenMessageID = message.id }
     }
 
     func previewVoice() {
@@ -180,9 +196,10 @@ final class ChatViewModel: ObservableObject {
             defer { pendingConversationID = nil }
             do {
                 let reply = try await reply(to: text, in: conversationID)
-                append(ChatMessage(text: reply.text, sender: .wanda, isLocal: reply.isLocal), to: conversationID)
+                let message = ChatMessage(text: reply.text, sender: .wanda, isLocal: reply.isLocal)
+                append(message, to: conversationID)
                 if conversationID == currentConversationID, speakReply || readRepliesAloud {
-                    voice.speak(reply.text)
+                    speak(message)
                 }
             } catch {
                 // Errors are shown but not saved, and only if that chat is still open.
@@ -227,6 +244,7 @@ final class ChatViewModel: ObservableObject {
         demoPlayer = nil
         demoStartedMusic = false
         demoApps = []
+        demoShowing = nil
         let previous = conversationBeforeDemo
         conversationBeforeDemo = nil
         guard restoringChat else { return }
@@ -270,8 +288,9 @@ final class ChatViewModel: ObservableObject {
             }
             guard await pause(max(0, 0.9 - Date().timeIntervalSince(started))) else { return }
             pendingConversationID = nil
-            messages.append(ChatMessage(text: reply.text, sender: .wanda, isLocal: reply.isLocal))
-            voice.speak(reply.text)
+            let message = ChatMessage(text: reply.text, sender: .wanda, isLocal: reply.isLocal)
+            messages.append(message)
+            speak(message, saying: step.spoken)
             let giveUp = Date().addingTimeInterval(60)
             while voice.isSpeaking, Date() < giveUp {
                 guard await pause(0.15) else { return }
@@ -316,6 +335,7 @@ final class ChatViewModel: ObservableObject {
                 WindowArranger.requestPermission()
                 return "To arrange windows, allow Wanda in System Settings → Privacy & Security → Accessibility."
             }
+            demoApps.removeAll { $0.isTerminated }
             let count = WindowArranger.arrange(demoApps)
             return count == 0 ? "I couldn't move those windows." : "Done. Your \(count) windows now fit the screen."
         case .playMusic:
@@ -334,27 +354,119 @@ final class ChatViewModel: ObservableObject {
             return "Playing \(player.name)."
         case .planTrip, .storageAdvice:
             return ""   // handled in perform(_:)
-        case .tidyUp(let minimize, let close):
+        case .findTheater:
+            // Open Maps and wait for its window, pin the theater, then lay out the screen:
+            // Maps first, with any other apps that are showing.
+            var arranged = false
+            if let mapsApp = WindowArranger.findApp("Maps") {
+                let opened = await WindowArranger.open([mapsApp])
+                var maps = URLComponents(string: "maps://")!
+                maps.queryItems = [URLQueryItem(name: "q", value: "\(DemoScript.theater), \(DemoScript.theaterAddress)")]
+                if let url = maps.url { NSWorkspace.shared.open(url) }
+                for app in opened where !demoApps.contains(app) { demoApps.append(app) }
+                guard await pause(1) else { return "" }
+                let others = WindowArranger.visibleApps().filter { app in
+                    !opened.contains { $0.processIdentifier == app.processIdentifier }
+                }
+                arranged = WindowArranger.arrange(opened + others) > 0
+                NSApp.activate(ignoringOtherApps: true)
+            }
+            // Get Wanda out of the way of Maps.
+            showMinimalView?(true)
+            let showing = DemoScript.nextShowing()
+            demoShowing = showing
+            let day = Calendar.current.isDateInToday(showing) ? "today" : "tomorrow"
+            return "The closest theater is \(DemoScript.theater), at \(DemoScript.theaterAddress). "
+                + "\(DemoScript.movie) is showing there \(day) at \(showing.formatted(date: .omitted, time: .shortened)). "
+                + (arranged ? "I've pinned it in Maps and organized your screen." : "I've pinned it in Maps.")
+        case .addMovieEvent:
+            let showing = demoShowing ?? DemoScript.nextShowing()
+            // Show the Calendar app on that day first, so the event can be seen appearing.
+            if let calendarApp = WindowArranger.findApp("Calendar") {
+                let opened = await WindowArranger.open([calendarApp])
+                for app in opened where !demoApps.contains(app) { demoApps.append(app) }
+                let days = Calendar.current.isDateInToday(showing) ? 0 : 1
+                _ = await AppleScript.run("""
+                tell application "Calendar"
+                    switch view to day view
+                    view calendar at ((current date) + \(days) * days)
+                end tell
+                """)
+                let others = WindowArranger.visibleApps().filter { app in
+                    !opened.contains { $0.processIdentifier == app.processIdentifier }
+                }
+                WindowArranger.arrange(opened + others)
+                NSApp.activate(ignoringOtherApps: true)
+                guard await pause(1.5) else { return "" }
+            }
+            let drive = await CalendarService.drivingTime(to: DemoScript.theaterAddress)
+            let alertBefore = (drive ?? 30 * 60) + DemoScript.leaveBuffer
+            do {
+                try await calendar.addEvent(
+                    title: DemoScript.movie, start: showing, end: showing.addingTimeInterval(DemoScript.movieLength),
+                    location: "\(DemoScript.theater), \(DemoScript.theaterAddress)",
+                    notes: "Added by Wanda.", alertBefore: alertBefore
+                )
+            } catch CalendarService.Failure.noAccess {
+                return CalendarService.permissionHint
+            } catch {
+                return "I couldn't add the event: \(error.localizedDescription)"
+            }
+            // Let the new event show up in Calendar before Wanda talks about it.
+            guard await pause(1) else { return "" }
+            let leaveAt = showing.addingTimeInterval(-alertBefore).formatted(date: .omitted, time: .shortened)
+            let driveText = drive.map { "It's about \(Int(($0 / 60).rounded())) minutes away by car, so " } ?? ""
+            return "Added \(DemoScript.movie) to your calendar at \(showing.formatted(date: .omitted, time: .shortened)), "
+                + "with the theater's address. \(driveText)I'll remind you to leave at \(leaveAt)."
+        case .tidyUp(let open, let minimize, let close, let arrange):
             var done: [String] = []
-            for name in minimize {
-                guard let app = WindowArranger.running(named: name) else { continue }
-                WindowArranger.minimize(app)
-                done.append("minimized \(app.localizedName ?? name)")
+            if !open.isEmpty {
+                let apps = await WindowArranger.open(open.compactMap(WindowArranger.findApp))
+                for app in apps where !demoApps.contains(app) { demoApps.append(app) }
+                if let player = MediaPlayer.all.first(where: { player in apps.contains { $0.bundleIdentifier == player.bundleID } }) {
+                    demoPlayer = player
+                }
+                if !apps.isEmpty {
+                    done.append("opened " + ListFormatter.localizedString(byJoining: apps.compactMap(\.localizedName)))
+                }
             }
-            let quitting = close.compactMap(WindowArranger.running(named:))
-            quitting.forEach { $0.terminate() }
-            let giveUp = Date().addingTimeInterval(5)
-            while quitting.contains(where: { !$0.isTerminated }), Date() < giveUp {
-                guard await pause(0.2) else { break }
-            }
-            demoApps.removeAll { $0.isTerminated }
-            if !quitting.isEmpty {
-                done.append("closed " + ListFormatter.localizedString(byJoining: quitting.compactMap(\.localizedName)))
+            done += minimizeApps(minimize)
+            if let closed = await quitApps(close) { done.append(closed) }
+            if arrange, WindowArranger.arrange(demoApps) > 0 {
+                done.append("organized your windows")
             }
             NSApp.activate(ignoringOtherApps: true)
             guard !done.isEmpty else { return "Nothing to tidy up." }
-            let sentence = done.joined(separator: " and ")
+            let sentence = done.count > 2
+                ? done.dropLast().joined(separator: ", ") + ", and " + done.last!
+                : done.joined(separator: " and ")
             return sentence.prefix(1).uppercased() + sentence.dropFirst() + "."
+        case .startCoding:
+            _ = minimizeApps(["Spotify"])
+            guard let code = WindowArranger.findApp("Visual Studio Code") else {
+                return "VS Code isn't installed on this Mac."
+            }
+            let folder = FileManager.default.temporaryDirectory.appendingPathComponent("Wanda Demo")
+            let file = folder.appendingPathComponent("demo.py")
+            do {
+                try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+                try DemoScript.pythonStarter.write(to: file, atomically: true, encoding: .utf8)
+            } catch {
+                return "I couldn't create the Python file."
+            }
+            NSWorkspace.shared.open([file], withApplicationAt: code, configuration: NSWorkspace.OpenConfiguration(), completionHandler: nil)
+            // Wait for VS Code's window, then give it the whole screen.
+            let giveUp = Date().addingTimeInterval(10)
+            while WindowArranger.running(named: "Visual Studio Code") == nil, Date() < giveUp {
+                guard await pause(0.3) else { return "" }
+            }
+            guard await pause(2) else { return "" }
+            if let vsCode = WindowArranger.running(named: "Visual Studio Code") {
+                if !demoApps.contains(vsCode) { demoApps.append(vsCode) }
+                WindowArranger.arrange([vsCode])
+                vsCode.activate()
+            }
+            return "Minimized Spotify and opened a new Python file in VS Code. Go ahead and code; I'll be here."
         case .saveItinerary:
             let desktop = FileManager.default.urls(for: .desktopDirectory, in: .userDomainMask)[0]
             let saved: DocumentSaver.SavedDocument
@@ -373,6 +485,29 @@ final class ChatViewModel: ObservableObject {
             NSApp.activate(ignoringOtherApps: true)
             return "Saved “\(saved.url.lastPathComponent)” to your Desktop and closed it."
         }
+    }
+
+    /// Minimizes the named apps that are open; returns what was done, e.g. "minimized Spotify".
+    private func minimizeApps(_ names: [String]) -> [String] {
+        names.compactMap { name in
+            guard let app = WindowArranger.running(named: name) else { return nil }
+            WindowArranger.minimize(app)
+            return "minimized \(app.localizedName ?? name)"
+        }
+    }
+
+    /// Quits the named apps that are open and waits for them; returns e.g. "closed Maps
+    /// and Calendar", or nil if none were open.
+    private func quitApps(_ names: [String]) async -> String? {
+        let quitting = names.compactMap(WindowArranger.running(named:))
+        guard !quitting.isEmpty else { return nil }
+        quitting.forEach { $0.terminate() }
+        let giveUp = Date().addingTimeInterval(5)
+        while quitting.contains(where: { !$0.isTerminated }), Date() < giveUp {
+            guard await pause(0.2) else { break }
+        }
+        demoApps.removeAll { $0.isTerminated }
+        return "closed " + ListFormatter.localizedString(byJoining: quitting.compactMap(\.localizedName))
     }
 
     /// Searches the destination in Safari, pins it in Maps, drafts the itinerary in
@@ -419,6 +554,9 @@ final class ChatViewModel: ObservableObject {
 
     private func demoReply(_ step: DemoScript.Step) async -> (text: String, isLocal: Bool) {
         if let reply = step.reply { return (reply, false) }
+        if LocalIntentParser.parse(step.said) == .morningRoutine {
+            return (await local.morningRoutine(reminders: DemoScript.reminders), true)
+        }
         if let answer = await local.answer(step.said), !answer.hasPrefix("I couldn't") {
             return (answer, true)
         }

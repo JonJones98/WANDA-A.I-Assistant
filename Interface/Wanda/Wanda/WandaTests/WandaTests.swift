@@ -930,11 +930,6 @@ final class DemoTests: XCTestCase {
         XCTAssertEqual(Bundle(url: safari)?.bundleIdentifier, "com.apple.Safari")
     }
 
-    func testTravelAnswerNamesTheTripDestination() {
-        let travel = DemoScript.steps.first { $0.said.contains("travel destination") }?.reply ?? ""
-        XCTAssertTrue(travel.contains("1. " + DemoScript.tripDestination), travel)
-    }
-
     func testStorageAdviceDependsOnFreeSpace() {
         let gb: Int64 = 1_000_000_000
         let low = DemoScript.storageAdvice(free: 20 * gb, total: 500 * gb)
@@ -1053,5 +1048,72 @@ final class DocumentTests: XCTestCase {
         XCTAssertEqual(first.url.lastPathComponent, "Packing List.txt")
         XCTAssertEqual(second.url.lastPathComponent, "Packing List 2.txt")
         XCTAssertEqual(try String(contentsOf: first.url), "Packing List\n• Hat\n")
+    }
+}
+
+final class CalendarTests: XCTestCase {
+    func testScheduleQuestions() {
+        for phrase in ["Do I have anything scheduled today?", "Hey Wanda, what's on my calendar today",
+                       "what do I have today", "What does my day look like?", "what meetings do I have today",
+                       "check my calendar"] {
+            XCTAssertEqual(LocalIntentParser.parse(phrase), .schedule(tomorrow: false), phrase)
+        }
+        for phrase in ["what's on my calendar tomorrow", "do I have any meetings tomorrow"] {
+            XCTAssertEqual(LocalIntentParser.parse(phrase), .schedule(tomorrow: true), phrase)
+        }
+        for phrase in ["how do I schedule a meeting", "what is a calendar year"] {
+            XCTAssertNil(LocalIntentParser.parse(phrase), phrase)
+        }
+    }
+
+    func testSummary() {
+        let nine = Calendar.current.date(bySettingHour: 9, minute: 0, second: 0, of: Date())!
+        let items = [CalendarService.Item(title: "Birthday", start: nine, isAllDay: true),
+                     CalendarService.Item(title: "Standup", start: nine, isAllDay: false)]
+        XCTAssertEqual(CalendarService.summary([], day: "today"), "Your calendar is clear today.")
+        XCTAssertEqual(CalendarService.summary(items, day: "today"),
+                       "You have 2 things today: Birthday (all day) and Standup at \(nine.formatted(date: .omitted, time: .shortened)).")
+    }
+
+    func testNextShowingIsAfterSixAndAhead() {
+        let calendar = Calendar.current
+        let noon = calendar.date(bySettingHour: 12, minute: 0, second: 0, of: Date())!
+        let showing = DemoScript.nextShowing(after: noon)
+        XCTAssertTrue(calendar.isDate(showing, inSameDayAs: noon))
+        XCTAssertEqual(calendar.component(.hour, from: showing), 18)
+
+        // At 8:30 PM the 6:45 show has started, so the 9:30 PM one is picked.
+        let evening = calendar.date(bySettingHour: 20, minute: 30, second: 0, of: Date())!
+        XCTAssertEqual(calendar.component(.hour, from: DemoScript.nextShowing(after: evening)), 21)
+
+        // Too late for either: tomorrow's first show.
+        let late = calendar.date(bySettingHour: 23, minute: 0, second: 0, of: Date())!
+        XCTAssertTrue(calendar.isDate(DemoScript.nextShowing(after: late),
+                                      inSameDayAs: calendar.date(byAdding: .day, value: 1, to: late)!))
+    }
+}
+
+final class MorningRoutineTests: XCTestCase {
+    func testMorningRoutinePhrases() {
+        for phrase in ["Run my morning routine.", "Hey Wanda, run morning routine", "good morning",
+                       "Good morning Wanda!", "morning briefing", "start my day"] {
+            XCTAssertEqual(LocalIntentParser.parse(phrase), .morningRoutine, phrase)
+        }
+        XCTAssertNil(LocalIntentParser.parse("what is a good morning routine for runners"))
+    }
+
+    func testYesterdayRecap() {
+        XCTAssertEqual(LocalAssistant.yesterdayRecap(events: [], completed: []),
+                       "Yesterday was quiet: nothing on your calendar.")
+        XCTAssertEqual(LocalAssistant.yesterdayRecap(events: ["Standup", "Dentist"], completed: ["Buy milk"]),
+                       "Yesterday you had Standup and Dentist, and finished one reminder.")
+        XCTAssertEqual(LocalAssistant.yesterdayRecap(events: [], completed: ["A", "B"]),
+                       "Yesterday you finished 2 reminders.")
+    }
+
+    func testCodingAnswerIsSpokenWithoutCode() throws {
+        let step = try XCTUnwrap(DemoScript.steps.first { $0.said.contains("conditionals") })
+        XCTAssertTrue(step.reply?.contains("elif temperature") == true)
+        XCTAssertFalse(step.spoken?.contains("temperature") ?? true)
     }
 }

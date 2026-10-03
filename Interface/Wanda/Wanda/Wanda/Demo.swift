@@ -5,10 +5,10 @@
 
 import Foundation
 
-/// A sample conversation that shows what Wanda can do: the mini view, opening and
-/// arranging apps, music (turned down while Wanda speaks), questions answered on the Mac,
-/// planning a trip in Safari and Maps with an itinerary saved to the Desktop, then tidying
-/// up. Replies are read aloud. Questions Wanda answers on the Mac get real answers; the
+/// A sample conversation that shows what Wanda can do: a morning routine, planning a
+/// movie night (Maps, a calendar event with a leave-by alert), the mini view, arranging
+/// apps, music (turned down while Wanda speaks), a coding break in VS Code and a Python
+/// question. Replies are read aloud. Questions Wanda answers on the Mac get real answers; the
 /// AI answers are written here, so the demo costs no tokens and works without the server.
 enum DemoScript {
     /// Things the demo does on the Mac, like a user would ask for them.
@@ -23,12 +23,21 @@ enum DemoScript {
         /// Searches `tripDestination` in Safari, pins it in Maps, drafts `itinerary` in
         /// TextEdit, then fits all the windows on screen.
         case planTrip
-        /// Minimizes the first apps and quits the second ones.
-        case tidyUp(minimize: [String], close: [String])
+        /// Opens, minimizes and quits apps, by name, then fits the demo's apps on screen
+        /// if `arrange` is set.
+        case tidyUp(open: [String] = [], minimize: [String] = [], close: [String] = [], arrange: Bool = false)
+        /// Minimizes Spotify, then opens `pythonStarter` in VS Code, full screen.
+        case startCoding
         /// Saves `itinerary` to the Desktop and closes TextEdit.
         case saveItinerary
         /// Real disk numbers, then AI-style advice on freeing space.
         case storageAdvice
+        /// Shows `theater` in Maps and picks the first `showtimes` entry after 6 PM
+        /// that's still ahead.
+        case findTheater
+        /// Adds the chosen showing to the calendar, with the theater's address and an alert
+        /// to leave based on the driving time.
+        case addMovieEvent
     }
 
     struct Step {
@@ -44,36 +53,107 @@ enum DemoScript {
         var fallback: String?
         /// Extra time after the answer, e.g. to hear the music.
         var pauseAfter: Double = 0
+        /// What Wanda says instead of reading `reply`, e.g. for a reply with code in it.
+        var spoken: String?
     }
 
     static let steps: [Step] = [
-        Step(said: "Switch to mini view.", action: .minimalView),
-        Step(said: "Open Maps and Spotify.", action: .openApps(["Maps", "Spotify"])),
+        Step(said: "Run my morning routine."),
+        Step(said: "I want to go to the movies today. What's showing?",
+             reply: """
+             Here are some of today's showings near you:
+             1. The Matrix (anniversary re-release)
+             2. Inception
+             3. Back to the Future
+             The Matrix has the most evening showtimes.
+             """),
+        Step(said: "I want to see The Matrix today. Which is the closest movie theater in South Park, and what's the showtime after 6 PM?",
+             wakes: false, action: .findTheater),
+        Step(said: "Create a calendar event for the movie with the address, and add an alert to leave the house in time to get there.",
+             wakes: false, action: .addMovieEvent),
+        Step(said: "Open Spotify and close Maps and Calendar.",
+             action: .tidyUp(open: ["Spotify"], close: ["Maps", "Calendar"])),
         Step(said: "Organize my windows.", wakes: false, action: .arrangeApps),
         Step(said: "Play Spotify.", wakes: false, action: .playMusic, pauseAfter: 4),
+        Step(said: "Minimize Spotify and open a new Python file in VS Code.",
+             action: .startCoding, pauseAfter: codingTime),
         Step(said: "What song is this?"),
-        Step(said: "What time is it?"),
-        Step(said: "What's the weather like today?",
-             fallback: "Today looks partly cloudy, with a high of 75° and a low of 60°."),
-        Step(said: "What's the best travel destination in 2026?",
-             reply: """
-             Here are three of the most talked-about picks for 2026:
-             1. Lisbon, Portugal: sunny hills, historic trams and great food at good prices.
-             2. Kyoto, Japan: temples, gardens and quiet traditional streets.
-             3. Cape Town, South Africa: mountains, beaches and wine country close by.
-             Lisbon comes out on top for its mix of culture, food and value.
-             """),
-        Step(said: "Search the number one spot in Safari and create an itinerary for a two-day trip.",
-             wakes: false, action: .planTrip, pauseAfter: 3),
-        Step(said: "Minimize Spotify and close Maps and Safari.",
-             action: .tidyUp(minimize: ["Spotify"], close: ["Maps", "Safari"])),
-        Step(said: "Save the itinerary to my Desktop and close it.", wakes: false, action: .saveItinerary),
         Step(said: "Switch to full view.", wakes: false, action: .fullView),
-        Step(said: "How much storage is available? Based on my stats, where can I improve?",
-             action: .storageAdvice),
-        Step(said: "Thanks, Wanda!",
+        Step(said: "How do I write a condition in Python?",
+             reply: """
+             Start with if, the condition and a colon, then indent the code to run when it's true. Add elif for more checks and else for everything else:
+
+             ```python
+             age = 20
+
+             if age >= 18:
+                 print("Adult")
+             elif age >= 13:
+                 print("Teenager")
+             else:
+                 print("Child")
+             ```
+
+             For bigger coding questions, like debugging a project or building a whole feature, use the coding agents in VS Code, such as GitHub Copilot or Claude Code. They can read your files and make the changes for you.
+             """,
+             spoken: """
+             To write a condition in Python, start with the word if, then the condition, and a colon. \
+             Indent the lines underneath to run when it's true. Add elif for more checks, and else for everything else. \
+             I've put an example on screen. \
+             For bigger coding questions, like debugging a project or building a whole feature, use the coding agents in VS Code, \
+             such as GitHub Copilot or Claude Code. They can read your files and make the changes for you.
+             """),
+        Step(said: "Thanks!",
              reply: "You're welcome! Say “Hey Wanda” whenever you need me."),
     ]
+
+    /// Read out by the morning routine instead of your real reminders.
+    static let reminders = ["Pick up groceries", "Call the dentist", "Water the plants"]
+
+    /// How long the demo waits while you write some code in VS Code (seconds).
+    static let codingTime: Double = 5
+
+    /// The file VS Code opens for the coding part.
+    static let pythonStarter = """
+    # Wanda demo: write some Python here.
+
+    def main():
+        names = ["Ada", "Grace", "Linus"]
+        for name in names:
+            print("Hello,", name)
+
+
+    if __name__ == "__main__":
+        main()
+    """
+
+    // The movie night. The theater, address and showtimes are sample values: change them
+    // to a real theater near you before recording.
+    static let movie = "The Matrix"
+    static let theater = "SouthPark Cinemas"
+    static let theaterAddress = "4400 Sharon Rd, Charlotte, NC 28211"
+    /// Hours and minutes, 24-hour clock.
+    static let showtimes = [(hour: 18, minute: 45), (hour: 21, minute: 30)]
+    /// Running time plus trailers.
+    static let movieLength: TimeInterval = 2.5 * 3600
+    /// Extra time before leaving, on top of the drive (parking, tickets, snacks).
+    static let leaveBuffer: TimeInterval = 15 * 60
+
+    /// The first showing after 6 PM that starts at least 45 minutes from `now`; if
+    /// they've all gone, the first one tomorrow.
+    static func nextShowing(after now: Date = Date()) -> Date {
+        let calendar = Calendar.current
+        let earliest = now.addingTimeInterval(45 * 60)
+        for dayOffset in 0...1 {
+            let day = calendar.date(byAdding: .day, value: dayOffset, to: now)!
+            for time in showtimes where time.hour >= 18 {
+                let showing = calendar.date(bySettingHour: time.hour, minute: time.minute, second: 0, of: day)!
+                if showing >= earliest { return showing }
+            }
+        }
+        return calendar.date(bySettingHour: showtimes[0].hour, minute: showtimes[0].minute, second: 0,
+                             of: calendar.date(byAdding: .day, value: 1, to: now)!)!
+    }
 
     static let tripDestination = "Lisbon, Portugal"
     static let itineraryFileName = "Lisbon 2-Day Itinerary"

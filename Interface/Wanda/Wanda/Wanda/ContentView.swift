@@ -197,7 +197,10 @@ struct ContentView: View {
                                 .foregroundStyle(.secondary)
                                 .padding(.top, 4)
                         }
-                        MessageBubble(message: message)
+                        MessageBubble(
+                            message: message,
+                            voice: message.id == viewModel.spokenMessageID ? viewModel.voice : nil
+                        )
                     }
                     if viewModel.isWaiting {
                         TypingIndicator()
